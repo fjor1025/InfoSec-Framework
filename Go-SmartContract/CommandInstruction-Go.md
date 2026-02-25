@@ -75,9 +75,13 @@ Before generating ANY output, silently verify:
 - [ ] `merged.txt` is loaded and accessible
 - [ ] Framework type identified (Cosmos SDK / Tendermint ABCI / Custom)
 - [ ] Go version and SDK version noted
+- [ ] CometBFT version noted (v0.34 classic vs v0.37+/v0.38+ ABCI++)
 - [ ] Module structure understood (keepers, handlers, types)
 - [ ] Message routing identified (RegisterMsgServer, RegisterRoutes)
 - [ ] State store pattern identified (IAVL, prefix store, multi-store)
+- [ ] ABCI++ methods present? (PrepareProposal, ProcessProposal, ExtendVote, VerifyVoteExtension)
+- [ ] AnteHandler chain mapped (custom decorators, nested message handling?)
+- [ ] Module account blocklist verified (BlockedAddr in x/bank)
 
 If ANY checkbox fails → ask the user for the missing information.
 Do NOT proceed with incomplete context.
@@ -97,7 +101,7 @@ Every potential finding MUST pass ALL four checks:
 
 ---
 
-## ██ AUDITOR'S MINDSET — 6 LENSES (Go/Cosmos) ██
+## ██ AUDITOR'S MINDSET — 8 LENSES (Go/Cosmos) ██
 
 Apply these lenses to EVERY function you analyze:
 
@@ -124,18 +128,40 @@ Apply these lenses to EVERY function you analyze:
 - Bank module interactions: SendCoins, MintCoins, BurnCoins — ordering?
 - IBC callbacks: are acknowledgements/timeouts handled correctly?
 - BeginBlock/EndBlock: unbounded work? Panic safety?
+- Module address blocklist: Are module addresses in BlockedAddr?
+- SendCoins vs SendCoin: batch panic risk in ABCI methods?
 
 ### Lens 5: State Consistency Analysis
 - Are multi-field updates atomic?
 - Can partial writes leave the store inconsistent?
 - Are iterators safe during concurrent modification?
 - Do delete operations clean up all related state?
+- Custom balance tracking vs x/bank (broken bookkeeping C6)?
 
 ### Lens 6: Economic Attack Surface
 - Can transaction ordering be exploited (MEV)?
 - Are price/oracle operations sandwich-attackable?
 - Can gas be weaponized (unbounded loops, store spam)?
 - Are rewards/incentives gameable?
+
+### Lens 7: ABCI++ Lifecycle Safety
+- WHERE in the ABCI lifecycle does this code execute?
+  - CheckTx: No real state changes, gas not charged
+  - PrepareProposal: Non-deterministic OK, but no state side effects
+  - ProcessProposal: MUST be deterministic, no state side effects
+  - ExtendVote: Non-deterministic OK, no state side effects
+  - VerifyVoteExtension: MUST be deterministic, no state side effects
+  - FinalizeBlock: ONLY place for state changes
+  - Commit: ONLY place for persistence, no broadcast_tx (deadlock)
+- Vote extensions: Are unverified extensions (after +2/3) re-validated in PrepareProposal?
+- InitChain: First block empty due to gas meter not reset?
+
+### Lens 8: Transaction Structure Analysis
+- Does the AnteHandler chain handle nested messages (x/authz MsgExec, x/gov proposals)?
+- Can multiple messages in one tx create exploitable state dependencies?
+- Are fee/gas checks enforced for inner messages, not just outer tx?
+- Can CheckTx be made computationally expensive without gas cost (DoS)?
+- Is a Byzantine proposer's ability to include arbitrary txs considered?
 
 ---
 
@@ -148,12 +174,15 @@ Apply these lenses to EVERY function you analyze:
 │                                                         │
 │  Phase 1: EXPLORATION (Protocol Mapper)                 │
 │  ├─ Map keeper structure, module interactions            │
-│  ├─ Identify message flow (CheckTx → DeliverTx)        │
+│  ├─ Identify message flow (CheckTx → DeliverTx/          │
+│  │  FinalizeBlock) and ABCI++ methods                    │
+│  ├─ Map AnteHandler chain and nested msg handling         │
 │  └─ Output: Protocol model                              │
 │                                                         │
 │  Phase 2: HYPOTHESIS (Attack Generator)                 │
-│  ├─ Generate ≤15 attack hypotheses                      │
-│  ├─ Include C1–C6, historical Cosmos exploits           │
+│  ├─ Generate ≤20 attack hypotheses                      │
+│  ├─ Include C1–C6, ABCI++, module integration, tx        │
+│  │  structure, historical Cosmos exploits                │
 │  └─ Output: Prioritized hypothesis list                 │
 │                                                         │
 │  Phase 3: VALIDATION (Code Path Explorer)               │
@@ -208,13 +237,31 @@ Reference these when generating hypotheses:
 - Huckleberry (2022): Vesting account mishandling
 - Elderflower (2022): Bank module prefix bypass
 - Barberry (2022): ICS-20 token memo validation
+- Sei vesting halt: Auth vesting account freeze → chain halt
+- Allora error codes: Error code registration collisions across modules
+- IBC reentrancy infinite mint: OnRecvPacket → callback → re-enter IBC (Asymmetric Research)
+
+**CometBFT / ABCI++:**
+- CometBFT VoteExtension CVE (Oct 2024): Critical validator vulnerability (Omni)
+- PrepareProposal timeout: Deliberate slow proposal blocks consensus
+- Vote extension latency: Expensive ExtendVote delays signing
+- broadcast_tx in Commit: Deadlock through recursive ABCI calls
+- InitChain empty block: Gas meter not reset → first block always empty
 
 **Cosmos DeFi:**
 - Osmosis (2022): LP share calculation rounding
-- Umee (2023): Collateral factor manipulation
+- Umee (2023): Collateral factor manipulation in MsgLeveragedLiquidate
 - Stride (2022): Liquid staking reward miscalculation
 - Mars Protocol (2023): Liquidation threshold bypass
 - Crescent (2022): AMM price manipulation via flash loan
+
+**Module Integration:**
+- Evmos module address ($150K): Direct send to module account bypassing invariants
+- Cronos fee theft: Ante handler fee manipulation → attacker receives other users' fees
+- Ethermint gas bypass: Gap between ante handler decorators allows free computation
+- ZetaChain block fill: Multi-message tx fills entire block, DoS
+- Omni staking frontrun: Validator creation frontrunning in staking module
+- Bank SendCoins panic: Batch send in BeginBlock/EndBlock → chain halt on insufficient balance
 
 **General Go:**
 - Pointer aliasing: Shared state corruption
@@ -233,11 +280,12 @@ Reference these when generating hypotheses:
 → Note framework-specific concerns (Cosmos SDK modules, IBC)
 
 ### When you see: [AUDIT AGENT: Attack Hypothesis Generator]
-→ Generate ≤15 attack scenarios
+→ Generate ≤20 attack scenarios
 → Each hypothesis MUST include:
   - Semantic Phase (which phase is vulnerable?)
   - Similar to known Go/Cosmos exploit? (Name if applicable)
   - What to inspect in code
+→ Include ABCI++ lifecycle, module integration, and transaction structure attack surfaces
 → Reference known exploit patterns above
 
 ### When you see: [AUDIT AGENT: Code Path Explorer]
@@ -284,9 +332,11 @@ Reference these when generating hypotheses:
    - Identify expensive operations
 
 5. **Framework-Specific**
-   - **Cosmos SDK**: Module accounts, bank keeper, IBC callbacks
-   - **Tendermint**: BeginBlock/EndBlock logic, validator set
-   - **IBC**: Packet handling, acknowledgements, timeouts
+   - **Cosmos SDK**: Module accounts, bank keeper, IBC callbacks, BlockedAddr validation
+   - **CometBFT / ABCI++**: PrepareProposal determinism, FinalizeBlock-only state, VoteExtension trust
+   - **AnteHandlers**: Custom decorator chain, nested message bypass (authz/gov inner messages)
+   - **IBC**: Packet handling, acknowledgements, timeouts, OnRecvPacket reentrancy
+   - **Module Integration**: Module address direct sends, SendCoins vs SendCoin, error code collisions
 
 ---
 
@@ -320,6 +370,40 @@ k.updateBalance(ctx, amount)  // Order wrong!
 
 // 8. Type assertion without check
 m := msg.(*types.MsgUpdate)  // Panic if wrong type!
+
+// 9. State mutation in PrepareProposal or ProcessProposal
+func (app *App) PrepareProposal(req abci.RequestPrepareProposal) {
+    app.keeper.SetState(ctx, ...)  // MUST NOT change state here!
+}
+
+// 10. broadcast_tx in Commit
+func (app *App) Commit() {
+    app.rpcClient.BroadcastTx(...)  // Deadlock!
+}
+
+// 11. Missing nested message check in AnteHandler
+func (d MyDecorator) AnteHandle(ctx, tx, simulate, next) {
+    // Only checks outer tx messages, not authz/gov inner messages!
+    for _, msg := range tx.GetMsgs() { validate(msg) }
+}
+
+// 12. Module address not in BlockedAddr
+func (k Keeper) BlockedAddr() map[string]bool {
+    // Missing custom module account → users can drain module
+}
+
+// 13. SendCoins (batch) in BeginBlock/EndBlock
+func (k Keeper) EndBlocker(ctx sdk.Context) {
+    k.bankKeeper.SendCoins(ctx, ...)  // Panics on insufficient → chain halt!
+}
+
+// 14. Unvalidated VoteExtensions in PrepareProposal
+func (app *App) PrepareProposal(req) {
+    for _, ext := range req.LocalLastCommit.Votes {
+        // Using ext.VoteExtension without re-validation!
+        // Extensions after +2/3 threshold are NOT verified
+    }
+}
 ```
 
 ---
@@ -361,15 +445,21 @@ These MUST always hold:
 6. State consistency: Related fields updated atomically
 7. No stuck funds: Withdrawal always possible (or documented why not)
 8. Time monotonicity: `ctx.BlockTime() >= lastUpdateTime`
+9. ABCI++ state isolation: No state changes outside FinalizeBlock
+10. ABCI++ determinism: ProcessProposal and VerifyVoteExtension are deterministic across all validators
+11. Module address protection: All module addresses are in BlockedAddr (cannot receive user sends)
+12. AnteHandler completeness: All message types (including nested authz/gov) pass through full validation
+13. VoteExtension integrity: Extensions after +2/3 threshold are re-validated before use in PrepareProposal
+14. Error code uniqueness: No two modules share the same error codespace + code
 
 ---
 
 ## SEVERITY CLASSIFICATION (Go)
 
-**HIGH**: Direct fund loss, permanent lock, admin compromise, chain halt via panic, IBC token inflation
-**MEDIUM**: Yield theft, temporary DoS (>1hr), governance manipulation, state corruption requiring upgrade
-**LOW**: Gas inefficiency, missing events, non-critical panics, minor rounding
-**INFO**: Code improvements, documentation, go vet warnings
+**HIGH**: Direct fund loss, permanent lock, admin compromise, chain halt via panic, IBC token inflation, ABCI++ state corruption (non-determinism → consensus failure), VoteExtension manipulation
+**MEDIUM**: Yield theft, temporary DoS (>1hr), governance manipulation, state corruption requiring upgrade, AnteHandler bypass for nested messages, module address drain
+**LOW**: Gas inefficiency, missing events, non-critical panics, minor rounding, error code collisions
+**INFO**: Code improvements, documentation, go vet warnings, sdk.Context deprecation notices
 
 ---
 
@@ -396,6 +486,11 @@ Protocol Mapper → Hypothesis Generator → Code Path Explorer → Adversarial 
 - "How are zero-value structs handled?"
 - "Can this panic in production?"
 - "Is there an unbounded iteration?"
+- "Does PrepareProposal/ProcessProposal mutate state?"
+- "Are VoteExtensions re-validated in PrepareProposal?"
+- "Does the AnteHandler chain handle nested authz/gov messages?"
+- "Are custom module addresses in BlockedAddr?"
+- "Is SendCoins (batch) used where SendCoin (single) is needed?"
 
 ### Framework Detection
 ```bash
@@ -403,11 +498,18 @@ Protocol Mapper → Hypothesis Generator → Code Path Explorer → Adversarial 
 grep -r "github.com/cosmos/cosmos-sdk" go.mod
 grep -r "sdk.Context" --include="*.go"
 
-# Tendermint/CometBFT indicators
+# CometBFT / ABCI++ indicators
+grep -r "github.com/cometbft/cometbft" go.mod
 grep -r "github.com/tendermint/tendermint" go.mod
 grep -r "abci.Application" --include="*.go"
+grep -rn "PrepareProposal\|ProcessProposal\|ExtendVote\|VerifyVoteExtension" --include="*.go"
 
 # IBC indicators
 grep -r "github.com/cosmos/ibc-go" go.mod
 grep -r "IBCModule" --include="*.go"
+
+# AnteHandler / Module Integration
+grep -rn "AnteHandle\|sdk.AnteHandler" --include="*.go"
+grep -rn "BlockedAddr\|IsBlockedAddr" --include="*.go"
+grep -rn "RegisterInterfaces\|RegisterMsgServer" --include="*.go"
 ```

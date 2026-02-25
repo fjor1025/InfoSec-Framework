@@ -25,7 +25,7 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 **Key Methodology Concepts to Apply:**
 - **Semantic Phases (Go):** VALIDATION → SNAPSHOT → ACCOUNTING → MUTATION → COMMIT → EVENTS → ERROR
 - **Validation Checks:** Reachability, State Freshness, Execution Closure, Economic Realism
-- **Known Exploit Patterns:** Dragonberry, Jackfruit, Osmosis LP, Crescent AMM, etc.
+- **Known Exploit Patterns:** Dragonberry, Jackfruit, Osmosis LP, Crescent AMM, Evmos module address, Cronos fee theft, Sei vesting, CometBFT VoteExtension CVE, IBC reentrancy infinite mint, etc.
 - **Go-Specific:** Pointer safety, zero values, error handling, panic safety
 
 ---
@@ -238,9 +238,14 @@ No additional sections are allowed.
 - Concurrency model (single-threaded typical for chains)
 
 8. Framework-Specific Notes
-- **Cosmos SDK**: BeginBlock/EndBlock logic, IBC callbacks, governance hooks
+- **Cosmos SDK**: BeginBlock/EndBlock logic, IBC callbacks, governance hooks, module address BlockedAddr list
+- **Cosmos SDK v0.50+**: ABCI++ methods (PrepareProposal, ProcessProposal, FinalizeBlock)
+- **CometBFT v0.38+**: ExtendVote/VerifyVoteExtension, vote extension size/latency
+- **Cosmos SDK v0.52+**: sdk.Context deprecated for appmodule.Environment
 - **Tendermint**: ABCI interface, validator set changes
-- **IBC**: Packet handling, acknowledgements, timeouts
+- **IBC**: Packet handling, acknowledgements, timeouts, reentrancy
+- **AnteHandlers**: Nested message handling, custom decorators, fee/gas enforcement
+- **Module Integration**: BlockedAddr, SendCoins vs SendCoin, error code registration
 
 Do NOT speculate.
 If information is missing, explicitly say "Unknown".
@@ -1059,6 +1064,84 @@ For each issue:
 - Recommended handling
 ```
 
+### SCAN ABCI++ Lifecycle Safety
+```text
+Context:
+Scan for ABCI++ method safety issues in the Go blockchain code.
+This applies to CometBFT v0.37+/v0.38+ chains.
+
+Goal:
+Identify violations of ABCI++ method safety properties.
+
+Focus:
+- PrepareProposal: State side effects? Determinism not required but ProcessProposal must accept.
+- ProcessProposal: Non-deterministic logic? State mutations?
+- ExtendVote: Side effects on current state?
+- VerifyVoteExtension: Non-deterministic logic? Must be deterministic.
+- FinalizeBlock: State changes ONLY here? No changes in Prepare/Process?
+- Commit: broadcast_tx calls that could deadlock? Persistence correct?
+- VoteExtension re-validation: Are extensions re-validated in PrepareProposal
+  (extensions after +2/3 are NOT verified by VerifyVoteExtension)?
+- InitChain: First block empty? Gas meter not reset issue?
+
+Output:
+For each issue:
+- Location (file:line)
+- ABCI method involved
+- Safety property violated
+- Potential impact (chain halt? consensus break? liveness failure?)
+```
+
+### SCAN Module Integration Safety
+```text
+Context:
+Scan for module integration vulnerabilities in the Cosmos chain.
+
+Goal:
+Identify where module boundaries create exploitable gaps.
+
+Focus:
+- Module addresses NOT in x/bank BlockedAddr list (direct MsgSend bypass)
+- Custom balance tracking that diverges from x/bank (broken bookkeeping C6)
+- SendCoins (plural) in BeginBlock/EndBlock with custom token logic (panic = chain halt)
+- Error code registration collisions across custom modules
+- Staking module: validator creation frontrunning with another's pubkey
+- Auth vesting account interactions with custom modules
+- Keeper dependency graph: circular dependencies? Missing wiring?
+
+Output:
+For each issue:
+- Affected module(s)
+- Integration boundary
+- Attack vector
+- Historical pattern (e.g., "$150K Evmos", "Sei chain halt", "Allora error codes")
+```
+
+### SCAN Transaction Structure Attacks
+```text
+Context:
+Scan for transaction structure exploitation vectors.
+
+Goal:
+Identify where transaction message composition creates attack surfaces.
+
+Focus:
+- AnteHandler chain: Does it recursively handle messages inside
+  x/authz MsgExec or x/gov proposals?
+- Multi-message transactions: Can msg[N] exploit state changes from msg[N-1]?
+- Inner message routing: Do nested messages bypass fee/gas/auth checks?
+- CheckTx resource usage: Expensive validation without gas charging (DoS vector)
+- Custom ante decorators: Are they aware of nested messages?
+- Fee manipulation: Can transaction structure avoid fee payment?
+
+Output:
+For each issue:
+- Location of AnteHandler or message handling logic
+- Attack scenario
+- Impact (fee theft? gas bypass? block space filling?)
+- Historical pattern ("Cronos fee theft", "Ethermint gas bypass", "ZetaChain block fill")
+```
+
 ---
 
 ## 9. HYPOTHESES FORMULATION CHAT (Go/Cosmos Edition)
@@ -1088,12 +1171,19 @@ Rules:
   6. Error path state leaks (partial writes before error return)
   7. Unbounded iteration (gas/block-time DoS)
   8. sdk.Dec precision loss (accumulated rounding)
+  9. ABCI++ method safety (state side effects in PrepareProposal/ProcessProposal)
+  10. VoteExtension manipulation (unverified extensions after +2/3 threshold)
+  11. Module address direct sends (bypass custom accounting invariants)
+  12. Nested message AnteHandler bypass (authz/gov inner message routing)
+  13. Transaction structure attacks (multi-msg, fee theft, gas bypass)
+  14. Bank module SendCoins panic in ABCI methods (custom token logic)
 - For each hypothesis, provide:
   - The specific keeper/handler function to investigate
   - The Go-specific mechanism that makes this possible
   - What message or transaction sequence an attacker would use
 - Reference known patterns: C1–C6 from Trail of Bits, historical Cosmos exploits
-  (Dragonberry, Jackfruit, Huckleberry, Osmosis LP, etc.)
+  (Dragonberry, Jackfruit, Huckleberry, Osmosis LP, Evmos module address,
+  Cronos fee theft, ZetaChain block fill, Sei vesting, CometBFT VoteExtension CVE, etc.)
 
 Let's start. I'll share my initial thoughts and you build on them.
 ```
@@ -1135,6 +1225,10 @@ All previous context is transferred below. Do NOT re-analyze from scratch.
 - Zero value handling: [known dangerous defaults]
 - BeginBlock/EndBlock: [what they do, bounded/unbounded]
 - Module interactions: [which keepers call which]
+- ABCI++ status: [CometBFT version, which ABCI++ methods are implemented]
+- VoteExtensions: [enabled? what data? size concerns?]
+- AnteHandler chain: [custom decorators? nested message handling?]
+- Module address blocklist: [verified? which module addresses are blocked?]
 
 ## AUDIT STATE
 - Hypotheses generated: [H1..Hn summary]
@@ -1198,6 +1292,6 @@ msg.(*Type)   → use ok pattern
 
 ---
 
-**Framework Version:** 2.0  
-**Last Updated:** January 2026  
-**Target Ecosystems:** Cosmos SDK, Tendermint, CometBFT, IBC, General Go
+**Framework Version:** 2.1  
+**Last Updated:** February 2026  
+**Target Ecosystems:** Cosmos SDK, Tendermint, CometBFT (incl. ABCI++), IBC, General Go

@@ -78,18 +78,33 @@ grep -rn "panic(" --include="*.go" | grep -v "_test.go"
 
 # Find IBC callback handlers
 grep -rn "OnRecvPacket\|OnAcknowledgementPacket\|OnTimeoutPacket" --include="*.go"
+
+# Find ABCI++ methods (CometBFT v0.37+/v0.38+)
+grep -rn "PrepareProposal\|ProcessProposal\|ExtendVote\|VerifyVoteExtension\|FinalizeBlock" --include="*.go" | grep -v _test.go
+
+# Find ante handler chain
+grep -rn "AnteHandler\|NewAnteHandler\|anteDecorator" --include="*.go" | grep -v _test.go
+
+# Find module address and blocklist patterns
+grep -rn "BlockedAddr\|blockedAddrs\|ModuleAddress\|ModuleAccountAddrs" --include="*.go"
+
+# Find nested message handling (authz/gov inner-msg bypass)
+grep -rn "MsgExec\|GetMsgs()\|UnpackInterfaces" --include="*.go" | grep -v _test.go
 ```
 
 ### **Step 1.2: Protocol-Specific Context**
 ```go
 // Quick mental model for any Go blockchain project
 type ProtocolContext struct {
-    Framework      string  // "Cosmos SDK", "Tendermint ABCI", "Custom"
+    Framework      string  // "Cosmos SDK v0.47", "v0.50", "v0.52", "Tendermint ABCI", "Custom"
+    ABCIVersion    string  // "Classic (BeginBlock/DeliverTx/EndBlock)" or "ABCI++ (FinalizeBlock)"
     StateStore     string  // "IAVL", "MemDB", "RocksDB", "LevelDB"
-    MessageFlow    string  // "CheckTx -> DeliverTx", "Direct handler"
+    MessageFlow    string  // "CheckTx -> DeliverTx" or "CheckTx -> FinalizeBlock"
     ErrorHandling  string  // "panic/recover", "return error", "ABCI codes"
     Concurrency    string  // "Single-threaded", "Goroutines", "Async"
     GasModel       string  // "Metered", "Block gas", "Fixed"
+    VoteExtensions bool    // CometBFT v0.38+ only — custom validator data in votes
+    AnteHandlers   string  // "Default SDK" or "Custom — check nested msg handling"
 }
 ```
 
@@ -101,17 +116,22 @@ type ProtocolContext struct {
 - [ ] Message handlers with external calls (IBC, cross-module)
 - [ ] Functions that mint/burn tokens
 - [ ] BeginBlock/EndBlock logic (affects all users)
+- [ ] PrepareProposal/ProcessProposal (ABCI++ — affects consensus)
+- [ ] ExtendVote/VerifyVoteExtension (vote manipulation surface)
+- [ ] AnteHandler chain (fee/gas/auth bypass surface)
 
 ## Priority 2 (Attack After)
-- [ ] Query handlers that could leak sensitive data
+- [ ] Query handlers that could leak sensitive data or be non-deterministic
 - [ ] Internal keeper methods called by handlers
 - [ ] Functions with time dependencies (ctx.BlockTime())
 - [ ] Functions using pointer receivers with mutations
+- [ ] Module account interactions (MintCoins, BurnCoins, SendCoinsFromModule)
 
 ## Priority 3 (Check Later)
 - [ ] Gas optimization opportunities
 - [ ] Event emission issues
 - [ ] Code style / go vet warnings
+- [ ] Consensus parameter update handlers
 ```
 
 ### **Step 1.4: Mandatory Validation Checks**
@@ -502,7 +522,7 @@ Before inventing new attacks, check if the code resembles past exploits:
 
 **Cosmos DeFi Exploits:**
 - [ ] **Osmosis (2022)**: LP share calculation rounding
-- [ ] **Umee (2023)**: Collateral factor manipulation
+- [ ] **Umee (2023)**: Collateral factor / exchange rate manipulation via direct transfer + IBC
 - [ ] **Stride (2022)**: Liquid staking reward miscalculation
 - [ ] **Mars Protocol (2023)**: Liquidation threshold bypass
 - [ ] **Crescent (2022)**: AMM price manipulation via flash loan
@@ -511,6 +531,8 @@ Before inventing new attacks, check if the code resembles past exploits:
 - [ ] **Evidence flooding**: Duplicate vote spam DoS
 - [ ] **Light client attacks**: Header verification bypass
 - [ ] **Consensus halting**: Block proposal manipulation
+- [ ] **CometBFT CVE (2024)**: Critical vulnerability in VerifyVoteExtension (Omni Network)
+- [ ] **PrepareProposal timeout**: Slow proposal creation → prevote nil → liveness failure
 
 **General Go/Memory Exploits:**
 - [ ] **Pointer aliasing**: Shared state corruption
@@ -522,8 +544,22 @@ Before inventing new attacks, check if the code resembles past exploits:
 **Cross-Module Attacks:**
 - [ ] **Bank→Staking**: Token movement during unbonding
 - [ ] **Gov→Upgrade**: Malicious proposal execution
-- [ ] **IBC→Bank**: Cross-chain token inflation
+- [ ] **IBC→Bank**: Cross-chain token inflation / IBC reentrancy infinite mint (Asymmetric Research)
 - [ ] **Auth→Bank**: Fee bypass via account type confusion
+- [ ] **Direct→Module**: MsgSend to module address breaks custom accounting ($150K Evmos)
+
+**ABCI++ Attacks (CometBFT v0.37+):**
+- [ ] **PrepareProposal state mutation**: Side effects in proposal building
+- [ ] **Unverified VoteExtensions**: Malicious proposer injects unverified extensions after +2/3
+- [ ] **FinalizeBlock bypass**: State changed outside FinalizeBlock (non-deterministic)
+- [ ] **Commit deadlock**: broadcast_tx inside Commit acquires mempool lock
+- [ ] **InitChain gas meter**: Height 1 block with txs → app_hash mismatch
+
+**Transaction Structure Attacks:**
+- [ ] **Multi-msg block fill**: Cheap multi-message txs fill block space (ZetaChain)
+- [ ] **Nested msg AnteHandler bypass**: Inner msgs in authz/gov skip ante handlers
+- [ ] **Cronos fee theft**: Transaction structure manipulation bypasses fee payment
+- [ ] **Ethermint gas bypass**: Txs bypass gas limit via ante handler gap
 
 **ClaudeSkills Enhanced Patterns (CRITICAL):**
 - [ ] **Incorrect GetSigners()** (CRITICAL): Signer impersonation via position mismatch
@@ -1027,12 +1063,16 @@ assert(ctx.BlockTime().After(lastUpdate) || ctx.BlockTime().Equal(lastUpdate))
 │ 1. FIND ENTRY POINTS:                                           │
 │    • Message handlers (func (k Keeper) HandleMsg* )             │
 │    • ABCI methods (CheckTx, DeliverTx, BeginBlock, EndBlock)    │
+│    • ABCI++ methods (PrepareProposal, ProcessProposal,           │
+│      ExtendVote, VerifyVoteExtension, FinalizeBlock)            │
+│    • AnteHandler chain (fee, gas, auth, custom decorators)       │
 │    • Functions with sdk.Context and message parameter           │
 │                                                                 │
 │ 2. BUILD EXECUTION SPINE:                                       │
 │    • Track function calls in order                              │
 │    • Include error flow (early returns)                         │
 │    • Note pointer modifications vs value copies                 │
+│    • Map cross-module keeper calls                              │
 │                                                                 │
 │ 3. AUDIT BY PHASE:                                              │
 │    • VALIDATION: Message fields, signatures, gas                │
@@ -1050,12 +1090,22 @@ assert(ctx.BlockTime().After(lastUpdate) || ctx.BlockTime().Equal(lastUpdate))
 │    • Panic in production code paths                             │
 │    • Unbounded operations (loops, slices, maps)                 │
 │                                                                 │
-│ 5. ATTACK SIMULATION:                                           │
+│ 5. COSMOS INTEGRATION CHECKS:                                   │
+│    • Module address blocklist (BlockedAddr) verified             │
+│    • AnteHandler covers nested msgs (authz, gov)                │
+│    • ABCI++ methods: no state side effects in Prepare/Process   │
+│    • SendCoins in BeginBlock — use singular SendCoin            │
+│    • VoteExtensions re-validated in PrepareProposal             │
+│    • IBC packet validation (OnRecvPacket, ack, timeout)         │
+│                                                                 │
+│ 6. ATTACK SIMULATION:                                           │
 │    • Zero/max values for all inputs                             │
 │    • Nil pointers and malformed data                            │
 │    • Repeated calls in same block                               │
 │    • Error path testing (what happens on failure?)              │
 │    • Gas DoS via unbounded operations                           │
+│    • Multi-msg transaction manipulation                         │
+│    • Direct MsgSend to module accounts                          │
 └─────────────────────────────────────────────────────────────────┘
 
 KEY GO INSIGHTS:
@@ -1064,6 +1114,9 @@ KEY GO INSIGHTS:
 • Error handling gaps → Inconsistent state
 • Unbounded operations → Gas DoS
 • Panic recovery → Protocol halt risk
+• Module address sends → Invariant bypass ($150K Evmos)
+• Nested messages → AnteHandler bypass
+• ABCI++ side effects → Consensus break
 ```
 
 ---
@@ -1284,6 +1337,159 @@ func (k Keeper) GetUserBalance(ctx sdk.Context, user string) sdk.Coins {
 
 ## **Phase 8: Protocol-Specific Attack Patterns (Cosmos DeFi)**
 
+### **8.0 ABCI++ Lifecycle Security (CometBFT v0.37+/v0.38+)**
+
+> **Source**: Generalized from CometBFT spec, Cosmos Unmasked research, Omni CometBFT CVE.
+> This section covers attack surfaces introduced by `PrepareProposal`, `ProcessProposal`,
+> `ExtendVote`, `VerifyVoteExtension`, and `FinalizeBlock` — the ABCI++ methods that
+> replace or extend the classic `BeginBlock`/`DeliverTx`/`EndBlock` flow.
+
+```markdown
+### ABCI++ Method Security Checklist
+
+#### PrepareProposal
+- [ ] **Determinism not required** but ProcessProposal MUST accept the result
+- [ ] **Timeout attack**: If PrepareProposal is too slow, proposer prevotes nil → liveness failure
+- [ ] **InitChain gas meter**: Height==1 should produce empty block (gas meter not reset after InitChain)
+- [ ] **MaxBytes respected**: Total proposal size ≤ req.MaxBytes
+- [ ] **MaxGas respected**: Total gas of included txs ≤ block gas limit
+- [ ] **VoteExtension re-validation**: Extensions included after +2/3 threshold are NOT verified by VerifyVoteExtension — must re-validate in PrepareProposal
+- [ ] **No state side effects**: PrepareProposal must not modify app state
+
+#### ProcessProposal
+- [ ] **MUST be deterministic** (unlike PrepareProposal)
+- [ ] **Should generally ACCEPT**: Rejecting too aggressively causes liveness issues
+- [ ] **No state side effects**: Must not modify committed state
+- [ ] **Candidate state only**: Results kept as candidate until FinalizeBlock confirms
+
+#### ExtendVote / VerifyVoteExtension
+- [ ] **ExtendVote can be non-deterministic** (proposer-specific data ok)
+- [ ] **VerifyVoteExtension MUST be deterministic**
+- [ ] **No state side effects** from either method
+- [ ] **VerifyVoteExtension should generally ACCEPT**: Rejection hurts liveness
+- [ ] **Vote extension size**: Large extensions increase block latency (2KB → mean latency doubles)
+- [ ] **Malicious extension injection**: A proposer can include unverified extensions after +2/3 reached
+
+#### FinalizeBlock and Commit
+- [ ] **State changes ONLY in FinalizeBlock**: Not in PrepareProposal/ProcessProposal
+- [ ] **Persist ONLY in Commit**: FinalizeBlock transitions state, Commit persists
+- [ ] **No broadcast_tx in Commit logic**: Acquires mempool lock → deadlock
+- [ ] **Height tracking**: App must remember last successful Commit height for crash recovery
+- [ ] **ExecuteTxState isolation**: Block execution state separate from proposal candidate states
+```
+
+**Detection Commands (ABCI++):**
+```bash
+# Find ABCI++ method implementations
+grep -rn "PrepareProposal\|ProcessProposal\|ExtendVote\|VerifyVoteExtension\|FinalizeBlock" --include="*.go" | grep -v _test.go
+
+# Check for state mutation in non-FinalizeBlock ABCI methods
+grep -A 20 "func.*PrepareProposal\|func.*ProcessProposal" --include="*.go" | grep -E "store\.Set|Set.*ctx|Save"
+
+# Check for broadcast_tx in Commit
+grep -rn "broadcast_tx\|BroadcastTx" --include="*.go"
+
+# Vote extension size concerns
+grep -rn "ExtendVote" --include="*.go" -A 30 | grep -E "append|marshal|encode"
+
+# InitChain gas meter issue
+grep -rn "InitChain\|Height.*==.*1" --include="*.go" | grep -v _test.go
+```
+
+### **8.0b Module Integration Attack Patterns**
+
+> **Source**: Generalized from 100+ Cosmos audit findings (Solodit, contest platforms),
+> Evmos $150K module address bug, Sei vesting chain halt, Allora error code collision,
+> Omni staking frontrun, Gravity Bridge SendCoins panic.
+
+```markdown
+### Module Integration Security Checklist
+
+#### Direct Token Sends to Module Addresses
+- [ ] **Module address blocklist**: Are module addresses in x/bank's BlockedAddr list?
+- [ ] **Invariant bypass**: Can MsgSend to a module address break custom accounting?
+- [ ] **$150K Evmos pattern**: Direct send to module account → invariant violation → fund extraction
+- [ ] **Detection**: Check `bankKeeper.BlockedAddr()` implementation and module account registration
+
+#### Bank Module Bulk Coin Sends
+- [ ] **SendCoins batch panic**: A single invalid transfer in SendCoins panics the entire batch
+- [ ] **Chain halt via BeginBlock/EndBlock**: If SendCoins is called in ABCI methods with custom token logic
+- [ ] **Custom token transfer logic**: Chains with blacklist tokens (USDC) can cause SendCoins to panic
+- [ ] **Fix pattern**: Use SendCoin (singular) with individual error handling, not SendCoins (plural)
+
+#### Auth Vesting Account Bugs
+- [ ] **Vesting + chain halt**: Vesting accounts can cause panics in balance calculations
+- [ ] **Sei pattern**: Chain halted due to vesting account interaction with custom module
+- [ ] **Huckleberry pattern**: IBC event hallucinations from vesting account mishandling
+
+#### Error Code Registration Collisions
+- [ ] **Error code 1 reserved**: Module error codes must be > 1 (code 1 = internal error)
+- [ ] **Unique per module**: Error codes must not collide within a codespace
+- [ ] **Allora pattern**: Mint and Emissions modules both registered error code 1 → ambiguous errors
+
+#### Staking Module Frontrunning
+- [ ] **Validator creation frontrun**: MsgCreateValidator with someone else's consensus pubkey
+- [ ] **Duplicate pubkey rejection**: Second validator with same pubkey is rejected → victim loses gas
+- [ ] **Omni pattern**: Malicious validator frontrunning legitimate validator registration
+
+#### secp256k1 Public Key Validation
+- [ ] **Key format validation**: Compressed keys must be 33 bytes, start with 0x02 or 0x03
+- [ ] **Curve membership**: Public key must be a valid point on the secp256k1 curve
+- [ ] **Chain halt**: Invalid pubkey in validator creation can panic consensus
+```
+
+### **8.0c Transaction Structure Attack Patterns**
+
+> **Source**: Generalized from Cronos fee theft, Ethermint ante handler bypass, ZetaChain
+> block space filling, nested message routing bypass in x/authz and x/gov.
+
+```markdown
+### Transaction Structure Security Checklist
+
+#### Multiple Messages Per Transaction
+- [ ] **Multi-msg exploitation**: Cosmos allows multiple messages in one tx — are all validated independently?
+- [ ] **Block space filling**: Single actor fills blocks with cheap multi-msg txs (ZetaChain MsgGasPriceVoter)
+- [ ] **Cross-message state dependency**: Does msg[1] depend on state changes from msg[0] in same tx?
+
+#### Nested Message / AnteHandler Bypass
+- [ ] **AnteHandler scope**: Default ante handlers only process outermost transaction
+- [ ] **Inner message routing**: Messages inside x/authz MsgExec or x/gov MsgSubmitProposal bypass ante handlers
+- [ ] **Gas/fee manipulation**: Inner messages may not have gas limits enforced
+- [ ] **Custom ante handler recursion**: Does the app implement recursive ante handling for nested msgs?
+- [ ] **Infinite gas meter exploit**: ZetaChain — malicious observer used infinite gas meter via nested msgs
+
+#### Ante Handler Fee/Gas Attacks
+- [ ] **Cronos fee theft pattern**: Transaction structure manipulation to bypass fee payment
+- [ ] **Ethermint bypass pattern**: Txs bypassing gas limit verification via ante handler gap
+- [ ] **CheckTx gas**: Gas is NOT charged during CheckTx — computationally expensive CheckTx = free DoS
+- [ ] **Byzantine proposer**: Can include any txs regardless of CheckTx result
+
+#### CheckTx vs DeliverTx/FinalizeBlock Divergence
+- [ ] **CheckTx is advisory only**: Byzantine proposer ignores CheckTx entirely
+- [ ] **Replay protection**: Must be app-level, not just CheckTx-level
+- [ ] **State-dependent validity**: Tx valid in CheckTx may be invalid in DeliverTx due to state changes
+```
+
+**Detection Commands (Transaction Structure):**
+```bash
+# Find ante handler implementations
+grep -rn "AnteHandler\|anteHandler\|NewAnteHandler" --include="*.go" | grep -v _test.go
+
+# Check for recursive message handling
+grep -rn "MsgExec\|authz.*Exec\|GetMsgs\|UnpackInterfaces" --include="*.go" | grep -v _test.go
+
+# Find CheckTx customization
+grep -rn "CheckTx\|checkTx" --include="*.go" | grep "func\|override"
+
+# Multi-message concerns
+grep -rn "GetMsgs()\|tx.GetMsgs" --include="*.go" | grep -v _test.go
+
+# Module address blocklist
+grep -rn "BlockedAddr\|blockedAddrs\|IsBlockedAddr" --include="*.go"
+```
+
+---
+
 ### **8.1 DeFi Lending Protocols (Cosmos)**
 ```markdown
 ### Lending-Specific Attack Surface
@@ -1293,6 +1499,7 @@ func (k Keeper) GetUserBalance(ctx sdk.Context, user string) sdk.Coins {
 - [ ] **Interest Rate Model**: Can rates be manipulated via large deposits/withdrawals?
 - [ ] **Cross-Module Reentrancy**: Can bank hooks or IBC callbacks re-enter lending logic?
 - [ ] **Flash Loan Equivalent**: Can same-block borrow-exploit-repay work on Cosmos?
+- [ ] **IBC Reentrancy Infinite Mint**: Asymmetric Research found ibc-go reentrancy → infinite token mint
 
 ### Cosmos-Specific Lending Concerns
 - Module account vs user account balance tracking
@@ -1386,6 +1593,10 @@ Before finalizing any finding, verify:
 - [ ] **"Zero value dangerous"**: Does the code's ValidateBasic() prevent zero values from reaching this point?
 - [ ] **"IBC vulnerability"**: Is the affected channel actually used? Is the relayer trusted?
 - [ ] **"Cross-module call"**: Are both modules deployed? Is the keeper interface correctly wired?
+- [ ] **"AnteHandler bypass"**: Does the chain actually use custom ante handlers that need nested msg awareness?
+- [ ] **"ABCI++ issue"**: Is the chain running CometBFT v0.37+ / v0.38+? Classic ABCI chains don't have PrepareProposal/ProcessProposal/VoteExtensions.
+- [ ] **"Module address send"**: Is the module address actually NOT in the BlockedAddr list? Verify bankKeeper.BlockedAddr().
+- [ ] **"SendCoins panic"**: Does the chain actually have custom token transfer logic (blacklists)? Standard cosmos tokens don't panic.
 ```
 
 ### **9.2 Impact Assessment Template**
@@ -1432,13 +1643,23 @@ Before finalizing any finding, verify:
 
 6. **The `x/bank` Module Is The Source of Truth**: Any custom balance tracking that doesn't use `x/bank` will desync when IBC transfers arrive. Always verify the canonical balance source.
 
-7. **Module Accounts Are Special**: They can't be rekeyed, but their balances can be drained if the module logic is flawed. Check `MintCoins`, `BurnCoins`, `SendCoinsFromModuleToAccount` carefully.
+7. **Module Accounts Are Special**: They can't be rekeyed, but their balances can be drained if the module logic is flawed. Check `MintCoins`, `BurnCoins`, `SendCoinsFromModuleToAccount` carefully. Also check if module addresses are in the BlockedAddr list to prevent direct MsgSend bypasses.
 
-8. **IBC Is A Trust Boundary**: Never assume IBC packets are well-formed. The counterparty chain could be malicious. Validate every field in `OnRecvPacket`.
+8. **IBC Is A Trust Boundary**: Never assume IBC packets are well-formed. The counterparty chain could be malicious. Validate every field in `OnRecvPacket`. IBC reentrancy can lead to infinite token minting (Asymmetric Research CVE).
 
 9. **Protobuf Defaults Are Zero Values**: When a field is missing from a protobuf message, it defaults to zero/empty. This is a common source of uninitialized-state bugs in Cosmos.
 
 10. **Check the Migration Handlers**: When auditing an upgrade, the migration handler in `RegisterMigration` is often where state corruption happens. Read every line.
+
+11. **ABCI++ Methods Have Different Safety Properties**: PrepareProposal can be non-deterministic, but ProcessProposal MUST be. FinalizeBlock is the ONLY place to change state. Commit is the ONLY place to persist. Mixing these up breaks consensus.
+
+12. **AnteHandlers Don't See Nested Messages**: Default ante handlers only process the outermost transaction. Inner messages in `x/authz MsgExec` or `x/gov` proposals bypass ante handler checks (gas, fees, custom validation). Build recursive ante handling if your chain has custom ante logic.
+
+13. **SendCoins vs SendCoin**: `SendCoins` (plural) transfers multiple coins atomically — a single panic (e.g., from blacklisted token logic) kills the entire batch. In BeginBlock/EndBlock, use `SendCoin` (singular) per denomination with individual error handling.
+
+14. **Vote Extensions Are Not Fully Trusted**: After the +2/3 threshold is reached, additional vote extensions are included WITHOUT VerifyVoteExtension validation. Re-validate in PrepareProposal before using.
+
+15. **sdk.Context Is Deprecated in v0.52**: Replaced by `appmodule.Environment`. Consensus params from sdk.Context are now unsafe. Check which SDK version the target uses.
 
 ---
 
@@ -1451,6 +1672,11 @@ Before finalizing any finding, verify:
 - [ ] All IBC callbacks reviewed (if applicable)
 - [ ] Module parameter validation checked
 - [ ] Genesis state initialization reviewed
+- [ ] ABCI++ methods reviewed (PrepareProposal, ProcessProposal, ExtendVote, VerifyVoteExtension, FinalizeBlock) if applicable
+- [ ] AnteHandler chain reviewed for nested message handling
+- [ ] Module address blocklist (BlockedAddr) verified
+- [ ] Query handlers checked for determinism and gas tracking (module_query_safe)
+- [ ] Consensus parameter update handlers reviewed
 
 ### Go-Specific Verification
 - [ ] All pointer receivers checked for mutation safety
@@ -1459,6 +1685,8 @@ Before finalizing any finding, verify:
 - [ ] Zero value handling verified throughout
 - [ ] Unbounded iterations identified and assessed
 - [ ] Type assertions checked for safety
+- [ ] secp256k1 public key validation verified (if custom validator logic)
+- [ ] Error code registration checked for collisions (codespace uniqueness)
 
 ### Finding Quality
 - [ ] Each finding passes all 4 validation checks
