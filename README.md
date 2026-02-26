@@ -14,7 +14,7 @@ Every framework enforces a **binding architecture** that prevents the LLM from "
 2. **CORE RULES OF ENGAGEMENT** — 5 non-negotiable rules (evidence-only, methodology adherence, output format, scope discipline, validation before confirmation)
 3. **PRE-ANALYSIS VERIFICATION** — Checklist the LLM must silently pass before generating any output
 4. **MANDATORY VALIDATION CHECKS** — 4 checks every finding must pass (Reachability, State Freshness, Execution Closure, Economic Realism)
-5. **AUDITOR'S MINDSET** — 6 ecosystem-specific lenses applied to every function
+5. **AUDITOR'S MINDSET** — 6–8 ecosystem-specific lenses applied to every function
 
 Without this architecture, the LLM treats methodology as optional. With it, the LLM is forced into structured audit behavior.
 
@@ -38,11 +38,17 @@ audit-assistant-playbook/
 │   ├── CommandInstruction-Rust.md         <- Binding architecture + 6 Rust lenses
 │   └── Rust-Smartcontract-workflow.md     <- Methodology + ClaudeSkills Solana/Substrate patterns
 │
-├── Go-SmartContract/                      <- Go Framework (Cosmos SDK / IBC)
+├── Go-SmartContract/                      <- Go Framework (Cosmos SDK / IBC / CometBFT)
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Go.md     <- Sections 1–10
-│   ├── CommandInstruction-Go.md           <- Binding architecture + 6 Go/Cosmos lenses
-│   └── Go-Smart-Contract-Audit-Methodology.md <- Methodology + ClaudeSkills C1–C6 patterns
+│   ├── CommandInstruction-Go.md           <- Binding architecture + 8 Go/Cosmos lenses
+│   └── Go-Smart-Contract-Audit-Methodology.md <- Methodology + ClaudeSkills C1–C6 + ABCI++ patterns
+│
+├── Cosmos-SDK/                            <- Cosmos SDK Framework (advanced chain-level)
+│   ├── README.md
+│   ├── Audit_Assistant_Playbook_Cosmos.md <- Sections 1–10
+│   ├── CommandInstruction-Cosmos.md       <- Binding architecture + Cosmos-specific lenses
+│   └── Cosmos-SDK-Security-Audit-Methodology.md <- Methodology + governance/consensus/IBC patterns
 │
 ├── Cairo-StarkNet/                        <- Cairo Framework (StarkNet L2)
 │   ├── README.md
@@ -82,7 +88,8 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 |-----------|-------|----------|----------------------|-----------------|
 | **Solidity/EVM** | ~2,492 | 1–10 | Benchmark (original) | Storage hunting, proxy thinking, flash loan, reentrancy, oracle, access control |
 | **Rust** | ~3,017 | 1–10 | Solana + Substrate | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic |
-| **Go/Cosmos** | ~3,354 | 1–10 | Cosmos C1–C6 | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface |
+| **Go/Cosmos** | ~3,700+ | 1–10 | Cosmos C1–C6 + ABCI++ | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface, ABCI++ lifecycle, tx structure |
+| **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
 | **Cairo/StarkNet** | ~2,703 | 1–10 | Cairo C1–C6 | felt252 thinking, storage hunting, L1↔L2 surface, reentrancy, serialization, access control |
 | **Algorand/PyTeal** | ~2,456 | 1–10 | Algorand A1–A9 | Transaction field hunting, group thinking, inner tx fee, clear state paranoia, smart sig, asset opt-in |
 
@@ -93,7 +100,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | ClaudeSkills Scanner | Patterns | Integrated Into | Key Additions |
 |---------------------|----------|-----------------|---------------|
 | Solana | 670+ lines | Rust CommandInstruction + Methodology | CPI, PDA, ownership, signer checks |
-| Cosmos | 741+ lines | Go CommandInstruction + Methodology | GetSigners, non-determinism, ABCI panic/slow, bookkeeping |
+| Cosmos | 741+ lines | Go CommandInstruction + Methodology + Cosmos-SDK | GetSigners, non-determinism, ABCI panic/slow, bookkeeping, ABCI++ lifecycle, module integration, tx structure attacks |
 | Substrate | 792+ lines | Rust CommandInstruction + Methodology | Weights/fees, verify-first, unsigned validation |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
@@ -134,10 +141,15 @@ Every function in every ecosystem is classified by what it does:
 2. Use [CommandInstruction-Rust.md](./RustBaseSmartContract/CommandInstruction-Rust.md) as system prompt
 3. Follow [Rust-Smartcontract-workflow.md](./RustBaseSmartContract/Rust-Smartcontract-workflow.md)
 
-### For Go Audits (Cosmos SDK / IBC)
+### For Go Audits (Cosmos SDK / IBC / CometBFT)
 1. Read [Audit_Assistant_Playbook_Go.md](./Go-SmartContract/Audit_Assistant_Playbook_Go.md)
 2. Use [CommandInstruction-Go.md](./Go-SmartContract/CommandInstruction-Go.md) as system prompt
 3. Follow [Go-Smart-Contract-Audit-Methodology.md](./Go-SmartContract/Go-Smart-Contract-Audit-Methodology.md)
+
+### For Cosmos SDK Chain-Level Audits (Governance / Consensus / Upgrades)
+1. Read [Audit_Assistant_Playbook_Cosmos.md](./Cosmos-SDK/Audit_Assistant_Playbook_Cosmos.md)
+2. Use [CommandInstruction-Cosmos.md](./Cosmos-SDK/CommandInstruction-Cosmos.md) as system prompt
+3. Follow [Cosmos-SDK-Security-Audit-Methodology.md](./Cosmos-SDK/Cosmos-SDK-Security-Audit-Methodology.md)
 
 ### For Cairo/StarkNet Audits
 1. Read [Audit_Assistant_Playbook_Cairo.md](./Cairo-StarkNet/Audit_Assistant_Playbook_Cairo.md)
@@ -166,6 +178,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 2.0
+**Framework Version:** 2.1
 **Last Updated:** February 2026
 **License:** MIT
