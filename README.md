@@ -86,7 +86,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 
 | Framework | Lines | Sections | ClaudeSkills Patterns | Ecosystem Lenses |
 |-----------|-------|----------|----------------------|-----------------|
-| **Solidity/EVM** | ~2,492 | 1–10 | Benchmark (original) | Storage hunting, proxy thinking, flash loan, reentrancy, oracle, access control |
+| **Solidity/EVM** | ~3,100+ | 1–10 | Benchmark + QuillAudits V1 | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline |
 | **Rust** | ~3,017 | 1–10 | Solana + Substrate | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic |
 | **Go/Cosmos** | ~3,700+ | 1–10 | Cosmos C1–C6 + ABCI++ | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface, ABCI++ lifecycle, tx structure |
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
@@ -99,6 +99,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 
 | ClaudeSkills Scanner | Patterns | Integrated Into | Key Additions |
 |---------------------|----------|-----------------|---------------|
+| **QuillAudits V1** | 10 skills | Solidity/EVM Methodology + Playbook + CommandInstruction | Guard consistency, invariant detection, behavioral analysis, reentrancy variants, external call safety, proxy safety, signature replay, oracle/flash loan, input/arithmetic, DoS/griefing, OWASP SC Top 10 (2025) |
 | Solana | 670+ lines | Rust CommandInstruction + Methodology | CPI, PDA, ownership, signer checks |
 | Cosmos | 741+ lines | Go CommandInstruction + Methodology + Cosmos-SDK | GetSigners, non-determinism, ABCI panic/slow, bookkeeping, ABCI++ lifecycle, module integration, tx structure attacks |
 | Substrate | 792+ lines | Rust CommandInstruction + Methodology | Weights/fees, verify-first, unsigned validation |

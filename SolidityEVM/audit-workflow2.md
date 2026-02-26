@@ -1,5 +1,6 @@
 # Smart Contract Audit Methodology - Semantic Phase Analysis
 
+> **Version:** 2.1 — Enhanced with Semantic Guard Analysis and State Invariant Detection
 > **Integration Note:** This file contains the semantic phase methodology (SNAPSHOT→COMMIT).
 > For conversation structure, see `../Audit_Assistant_Playbook.md`.
 > For the system prompt, see `CommandInstruction.md`.
@@ -220,6 +221,71 @@ def check_variable(var_name):
     return gaps
 ```
 
+### **Step 3.4: Semantic Guard Analysis**
+Build a usage graph of security guards across ALL functions:
+
+```markdown
+## Guard Usage Graph
+For each `require`, `modifier`, or access check:
+1. List ALL functions that enforce it
+2. List ALL functions that touch the same state but SKIP it
+3. Flag inconsistencies (Consistency Principle)
+
+| Guard | Functions WITH Guard | Functions WITHOUT Guard | Same State? | Risk |
+|-------|---------------------|------------------------|-------------|------|
+| `onlyOwner` | setFee(), pause() | emergencyWithdraw() | ✅ config | ⚠️ |
+| `nonReentrant` | withdraw(), deposit() | claim() | ✅ balances | 🚨 |
+| `whenNotPaused` | deposit(), swap() | withdraw() | ✅ core ops | ⚠️ |
+
+### Consistency Principle
+If guard G protects function A, and function B touches the same state variables
+as A, then B should also have guard G (or an equivalent protection).
+
+Violations of this principle indicate:
+- Missing access controls
+- Forgotten pause checks
+- Reentrancy surface gaps
+- Inconsistent privilege boundaries
+```
+
+### **Step 3.5: State Invariant Inference**
+Automatically infer mathematical relationships from code:
+
+```markdown
+## Invariant Categories to Detect
+
+### 1. Sum Invariants
+totalSupply == Σ(balanceOf[i]) for all i
+totalDeposits == Σ(userDeposit[i]) for all i
+
+### 2. Conservation Rules
+protocol.balance >= Σ(claims) + Σ(pending_withdrawals)
+fees_collected + distributed + remaining == original_amount
+
+### 3. Ratio Invariants
+shares[user] / totalShares == user_proportion (monotonic or bounded)
+collateral[user] / debt[user] >= minCollateralRatio
+
+### 4. Monotonic Properties
+nonce[user] only increases
+accumulatedRewardsPerShare only increases
+totalSupply only changes via mint/burn (not arbitrary assignment)
+
+### 5. Synchronized State
+If A and B must be updated together, verify:
+- No code path updates A without B
+- No code path updates B without A
+- No external call between updating A and B
+
+## Audit Method
+For EACH inferred invariant:
+- [ ] List all functions that could violate it
+- [ ] Trace through each function to verify invariant holds
+- [ ] Test edge cases: zero values, max values, first/last user
+- [ ] Check: does invariant hold across reentrancy?
+- [ ] Check: does invariant hold across flash loan?
+```
+
 ---
 
 ## **Phase 4: Attack Simulation with Phase Analysis**
@@ -416,5 +482,62 @@ IF function name contains:       THEN classify as:
 - "accrue", "interest", "fee"    → ACCOUNTING
 - "update", "transfer", "mint"   → MUTATION
 - "save", "emit", "write"        → COMMIT
+```
+
+---
+
+## **Phase 7: Behavioral State Analysis**
+
+### **Step 7.1: Behavioral Decomposition**
+Treat the contract’s code as its own specification. Extract behavioral intent:
+
+```markdown
+## For each public/external function, answer:
+1. **Core Intent**: What is this function trying to achieve? (e.g., "transfer tokens", "update oracle")
+2. **Security Guards**: What `require`/modifier checks protect it?
+3. **State Invariants**: What mathematical relationships must hold before and after?
+4. **Side Effects**: What other state changes or external calls occur?
+5. **Trust Boundaries**: What does it assume about callers, parameters, and external contracts?
+```
+
+### **Step 7.2: Multi-Dimensional Threat Modeling**
+For each function’s behavioral intent, evaluate threats across three dimensions:
+
+```markdown
+| Dimension | Question | Vulnerability Class |
+|-----------|----------|--------------------|
+| **Economic** | Can the function be exploited for profit? | Flash loan, sandwich, oracle manipulation |
+| **Permission** | Can unauthorized actors trigger this behavior? | Access control, missing guards, privilege escalation |
+| **State Integrity** | Can state invariants be broken? | Accounting drift, reentrancy, race conditions |
+```
+
+### **Step 7.3: Adversarial Simulation**
+For promising threat vectors, construct concrete attack scenarios:
+
+```markdown
+## Attack Scenario Template
+1. **Initial State**: What conditions must exist?
+2. **Trigger**: What transaction(s) does the attacker send?
+3. **Mechanism**: How does it exploit the identified weakness?
+4. **Impact**: What is the concrete result (funds stolen, state corrupted, DoS)?
+5. **Confidence**: How certain are you this works? (Low / Medium / High)
+   - Based on: code evidence, historical precedent, invariant violation
+```
+
+### **Step 7.4: Confidence Scoring**
+Assign probabilistic risk levels to each hypothesis:
+
+```markdown
+| Evidence Factor | Weight | Score |
+|----------------|--------|-------|
+| Guard analysis: missing guard on state-touching function | High | +3 |
+| Invariant analysis: provable invariant violation | High | +3 |
+| Historical pattern match (known exploit) | Medium | +2 |
+| Edge case / unusual input triggers issue | Medium | +2 |
+| Theoretical / requires very specific conditions | Low | +1 |
+
+Total ≥7: HIGH confidence (likely valid finding)
+Total 4-6: MEDIUM confidence (needs deeper analysis)
+Total ≤3: LOW confidence (theoretical / unlikely)
 ```
 ---

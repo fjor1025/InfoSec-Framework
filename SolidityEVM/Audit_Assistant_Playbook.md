@@ -1,6 +1,7 @@
 # Audit Assistant Playbook
 Cognitive Framework for Smart Contract Auditing
 
+* Version: 2.1 — Enhanced with QuillAudits Claude Skills V1 patterns
 * Status: Experimental / Practitioner Tool
 * Audience: Experienced smart contract auditors
 
@@ -39,6 +40,9 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 - **Semantic Phases**: SNAPSHOT → ACCOUNTING → VALIDATION → MUTATION → COMMIT
 - **Validation Checks**: Reachability, State Freshness, Execution Closure, Economic Realism
 - **Known Exploit Patterns**: Euler, Cream, Nomad, Wormhole, Curve read-only reentrancy, etc.
+- **Guard Consistency**: Semantic Guard Analysis — usage graph of `require`/modifier checks
+- **State Invariant Detection**: Infer mathematical relationships, check all functions
+- **OWASP SC Top 10 (2025)**: SC01–SC10 coverage mapping
 - **Time-Boxing**: 40/40/20 rule for large codebases
 
 ---
@@ -316,6 +320,15 @@ Constraints:
   - Reentrancy: DAO, Curve read-only, ERC777 hooks
   - Access Control: Nomad, Wormhole, Parity
   - Flash Loan: bZx, PancakeBunny, Rari/Fei
+- Reference OWASP SC Top 10 (2025) categories from [audit-workflow1.md, OWASP Coverage Map]:
+  - SC01 Access Control, SC02 Oracle, SC03 Logic, SC04 Input, SC05 Reentrancy
+  - SC06 Unchecked Calls, SC07 Flash Loan, SC08 Overflow, SC09 Randomness, SC10 DoS
+- Include guard consistency and invariant violation hypotheses:
+  - Functions missing guards that peers enforce (Semantic Guard Analysis)
+  - Mathematical invariants that could break under edge cases (State Invariant Detection)
+  - External call safety: fee-on-transfer, rebasing, weird ERC20 assumptions
+  - Proxy/upgrade: storage collisions, uninitialized implementations
+  - Signature replay: cross-chain, nonce skipping, expired permits
 
 Output STRICTLY in the following format:
 
@@ -1124,6 +1137,181 @@ Do NOT:
 - Assign severity
 - Propose exploits
 - Speculate wildly
+
+Language:
+Respond in Russian.
+
+```
+### SCAN Guard Consistency
+```text
+Context:
+Perform a security scan focused on guard consistency across functions.
+
+Goal:
+Identify functions that are missing security guards (require/modifier checks)
+that peer functions enforce on the same state.
+
+Instructions:
+- Use the full code from merged.txt.
+- Build a mental usage graph of all require statements and modifiers.
+- Apply the Consistency Principle: if guard G protects function A,
+  and function B touches the same state, flag B if it lacks G.
+- Do NOT validate exploits or assess severity.
+
+Focus areas:
+- Missing `nonReentrant` on functions with external calls
+- Missing `whenNotPaused` on critical state-changing functions
+- Missing access control on admin-adjacent operations
+- Custom modifiers applied inconsistently
+- Functions that bypass guards through internal call paths
+
+Output:
+For each finding:
+- The guard that is inconsistently applied
+- Functions WITH the guard vs functions WITHOUT
+- Shared state variables between them
+- Why this inconsistency could be exploitable
+
+Language:
+Respond in Russian.
+
+```
+### SCAN Invariant Detection
+```text
+Context:
+Perform a security scan focused on state invariant detection.
+
+Goal:
+Infer mathematical relationships between state variables and flag
+functions that could violate them.
+
+Instructions:
+- Use the full code from merged.txt.
+- Automatically infer invariants: supply sums, conservation rules,
+  collateral ratios, monotonic counters, synchronized updates.
+- For each invariant, trace ALL functions that modify related state.
+- Flag any function that could break the invariant.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- totalSupply vs sum of balances (accounting desyncs)
+- Share/asset ratios (first depositor, ERC-4626 inflation)
+- Cross-contract state consistency (same value in multiple places)
+- Accumulator updates (rewards, interest, fees) and missed updates
+- Zero/near-zero edge states (empty pool, first/last user)
+- Conservation of value across multi-step operations
+
+Output:
+For each invariant:
+- The inferred relationship (mathematical expression)
+- Functions that could violate it
+- Edge cases that could trigger the violation
+- Confidence: High / Medium / Low
+
+Language:
+Respond in Russian.
+
+```
+### SCAN Reentrancy Variants
+```text
+Context:
+Perform a security scan focused on all reentrancy variants.
+
+Goal:
+Identify potential reentrancy beyond simple "state update after external call."
+
+Instructions:
+- Use the full code from merged.txt.
+- Build a call graph of all external calls and state changes.
+- Verify CEI (Checks-Effects-Interactions) compliance on every path.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Classic reentrancy: state updated after external call
+- Cross-function reentrancy: external call in A, state read in B
+- Cross-contract reentrancy: callback re-enters a different contract
+- Read-only reentrancy: view function returns stale data during callback
+- Callback-based: ERC-777 tokensReceived, ERC-1155 onReceived, ERC-721 onReceived
+- Missing nonReentrant on functions that share state with guarded functions
+
+Output:
+Bulleted list.
+For each item:
+- Reentrancy variant type
+- Call path (function → external call → potential reentry point)
+- State variables at risk
+- Whether nonReentrant or equivalent guard exists
+
+Language:
+Respond in Russian.
+
+```
+### SCAN External Call Safety
+```text
+Context:
+Perform a security scan focused on external contract and token interactions.
+
+Goal:
+Identify potential issues with external calls, token integrations,
+and non-standard token behaviors.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check every external call and token interaction.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Unchecked return values on transfer/transferFrom/approve
+- Fee-on-transfer tokens: Does protocol assume received == sent?
+- Rebasing tokens: Does balance change between reads without transfers?
+- Non-standard ERC20: missing return value (USDT), decimals != 18, blocklist
+- Unsafe approval patterns: approve without reset, infinite approval risks
+- Callback exploitation: ERC-777 hooks, ERC-1155/721 receiver callbacks
+- Low-level calls: .call{value:} without checking success
+- Push vs pull payment patterns
+- 63/64 gas rule exploitation on external calls
+
+Output:
+Bulleted list.
+For each item:
+- The external interaction at risk
+- Token/contract assumptions made by the code
+- What could go wrong with non-standard tokens or malicious contracts
+
+Language:
+Respond in Russian.
+
+```
+### SCAN Proxy & Upgrade Safety
+```text
+Context:
+Perform a security scan focused on proxy and upgrade patterns.
+
+Goal:
+Identify potential issues in upgradeable contracts and proxy implementations.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all proxy patterns, storage layouts, and upgrade paths.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Proxy pattern type (Transparent, UUPS, Beacon, Diamond/EIP-2535, Minimal)
+- Storage layout collisions between proxy and implementation
+- Uninitialized implementation contracts (can be initialized by attacker)
+- Function selector clashes between proxy admin and implementation
+- Missing storage gaps (__gap) in inherited contracts
+- Unsafe upgrade paths that could break storage layout
+- EIP-1967 standard slot compliance
+- delegatecall target trust (immutable vs changeable)
+- Constructor vs initializer usage
+
+Output:
+Bulleted list.
+For each item:
+- The specific proxy/upgrade concern
+- Affected contracts and patterns
+- Why this could lead to storage corruption or privilege escalation
 
 Language:
 Respond in Russian.

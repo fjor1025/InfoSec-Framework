@@ -1,6 +1,6 @@
 # Solidity/EVM Audit Framework
 
-> **Version:** 2.0 — Binding Architecture
+> **Version:** 2.1 — Enhanced with QuillAudits Claude Skills V1 patterns and OWASP SC Top 10 (2025)
 > **Ecosystem:** Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)
 
 ---
@@ -10,6 +10,19 @@
 A structured audit framework for Solidity/EVM smart contracts. Three files work together as a binding system — not suggestions, not guidelines, but rules that govern how every audit conversation operates.
 
 This is the **benchmark framework** that all other ecosystem frameworks (Rust, Go, Cairo, Algorand) were modeled after.
+
+### QuillAudits Claude Skills V1 Integration (v2.1)
+Patterns from [QuillAudits open-source Claude Skills](https://github.com/quillai-network/qs_skills) are generalized and integrated:
+- **Semantic Guard Analysis** — Usage graph of `require`/modifier checks; Consistency Principle for gap detection
+- **State Invariant Detection** — Auto-infer mathematical relationships; audit all paths for violations
+- **Behavioral State Analysis** — Behavioral decomposition, multi-dimensional threat modeling, confidence scoring
+- **Reentrancy Variants** — Classic, cross-function, cross-contract, read-only, callback-based (ERC-777/1155)
+- **External Call Safety** — Fee-on-transfer, rebasing, weird ERC20, unchecked returns, 63/64 gas
+- **Proxy & Upgrade Safety** — Transparent, UUPS, Beacon, Diamond; storage collisions, uninitialized impls
+- **Signature & Replay Analysis** — Same-chain, cross-chain, nonce-skip, EIP-712, permit/permit2
+- **Oracle & Flash Loan Analysis** — Oracle classification, staleness, ERC-4626 inflation vectors
+- **Input & Arithmetic Safety** — Precision loss, rounding exploits, unsafe casting
+- **DoS & Griefing Analysis** — 63/64 gas griefing, storage bloat, forced Ether, selfdestruct
 
 ---
 
@@ -36,13 +49,16 @@ The CommandInstruction enforces five rules that prevent the AI from "chatting" i
 4. **Grounding Requirement** — All analysis must be derived from the workflow processes
 5. **Transparent Citation** — Every finding must cite its source: `[filename, section]`
 
-### Auditor's Mindset (4 Lenses)
+### Auditor's Mindset (7 Lenses)
 
 | Lens | What It Catches |
 |------|----------------|
 | Value Flow ("follow the money") | Fund theft, insolvency, accounting drift |
 | Adversarial Thinking | Lowest-effort, highest-impact exploit paths |
-| Historical Awareness | Known exploit pattern matching (Euler, Cream, Nomad, Curve, etc.) |
+| Historical Awareness | Known exploit pattern matching (Euler, Cream, Nomad, Curve, DAO, etc.) |
+| Guard Consistency | Functions missing guards that peers enforce on same state |
+| Invariant Awareness | Mathematical relationships between state variables that could break |
+| OWASP Coverage | SC01–SC10 category completeness |
 | Time Discipline | 40/40/20 time-boxing to prevent analysis paralysis |
 
 ### Mandatory Validation (4 Checks)
@@ -71,7 +87,7 @@ The Audit_Assistant_Playbook provides 10 structured sections for the full audit 
 | 5 | Finding Drafting | Triage-friendly report preparation |
 | 6 | Scope Index | Navigational artifact for manual code review |
 | 7 | Review Mode | Completeness and correctness check of reasoning |
-| 8 | SCAN Chats | Signal generators (Paranoid, Access Lifecycle, Accounting, Low-Noise) |
+| 8 | SCAN Chats | Signal generators (Paranoid, Access Lifecycle, Accounting, Low-Noise, **Guard Consistency, Invariant Detection, Reentrancy Variants, External Call Safety, Proxy/Upgrade Safety**) |
 | 9 | Hypotheses Formulation | Transform vague intuitions into testable hypotheses |
 | 10 | Scope Transfer | Context packaging for moving to new chats |
 
@@ -101,6 +117,21 @@ Every function is classified into phases, then audited phase-by-phase (not call-
 | Logic/Math | Compound (2021), Cover Protocol (2020), YAM (2020) |
 | Flash Loan | bZx (2020), PancakeBunny (2021), Rari/Fei (2022) |
 
+### OWASP Smart Contract Top 10 (2025) Coverage (audit-workflow1.md)
+
+| OWASP ID | Category | Coverage |
+|----------|----------|----------|
+| SC01 | Access Control | Semantic Guard Analysis |
+| SC02 | Oracle Manipulation | Oracle & Flash Loan Analysis |
+| SC03 | Logic Errors | Behavioral State Analysis + Invariant Detection |
+| SC04 | Input Validation | Input & Arithmetic Safety |
+| SC05 | Reentrancy | Reentrancy Pattern Analysis (all variants) |
+| SC06 | Unchecked External Calls | External Call Safety |
+| SC07 | Flash Loan Attacks | Oracle & Flash Loan Analysis |
+| SC08 | Integer Overflow | Input & Arithmetic Safety |
+| SC09 | Insecure Randomness | Behavioral State Analysis |
+| SC10 | DoS Attacks | DoS & Griefing Analysis |
+
 ### Protocol-Specific Attack Phases (audit-workflow1.md)
 
 Pre-built attack checklists for:
@@ -129,8 +160,10 @@ Pre-built attack checklists for:
 |----------|---------|
 | [report-writing.md](../report-writing.md) | How to write findings that communicate with judges |
 | [VULNERABILITY_PATTERNS_INTEGRATION.md](../VULNERABILITY_PATTERNS_INTEGRATION.md) | ClaudeSkills pattern integration status across all frameworks |
+| [QuillAudits Claude Skills V1](https://github.com/quillai-network/qs_skills) | Open-source AI audit plugins (MIT licensed) — 10 specialized skills |
+| [QuillAudits Blog Post](https://www.quillaudits.com/blog/ai-agents/first-version-claude-skills) | Detailed walkthrough of the Semantic State Protocol methodology |
 
 ---
 
-**Framework Version:** 2.0
+**Framework Version:** 2.1
 **Last Updated:** February 2026

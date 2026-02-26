@@ -1,5 +1,6 @@
 # Smart Contract Audit Methodology - Manual Workflow
 
+> **Version:** 2.1 — Enhanced with QuillAudits Claude Skills V1 patterns and OWASP SC Top 10 (2025)
 > **Integration Note:** This file contains the audit *methodology* and heuristics.
 > For conversation structure, see `../Audit_Assistant_Playbook.md`.
 > For the system prompt, see `CommandInstruction.md`.
@@ -315,6 +316,9 @@ For EVERY function, test these:
 - [ ] Function makes external call
 - [ ] State is updated AFTER the call
 - [ ] Try: call → reenter → exploit
+- [ ] Check all reentrancy variants: classic, cross-function, cross-contract, read-only, callback-based (ERC-777/ERC-1155)
+- [ ] Verify CEI (Checks-Effects-Interactions) compliance on ALL external call paths
+- [ ] Build call graph: trace state changes around every external call
 
 ## Frontrunning
 - [ ] Function uses `msg.value` or user input
@@ -331,16 +335,24 @@ For EVERY function, test these:
 ## Access Control Bypass
 - [ ] Function has modifiers
 - [ ] Try: call from different address
+- [ ] Semantic Guard Analysis: Build usage graph of `require`/modifier guards across ALL functions
+- [ ] Consistency Principle: If guard X protects function A, does it also protect functions B,C that touch the same state?
+- [ ] Flag functions missing pause/access controls that peer functions enforce
 
 ## Gas Griefing
 - [ ] Function has loops or unbounded operations
 - [ ] Try: make it run out of gas
+- [ ] Check 63/64 gas rule: can attacker provide just enough gas to execute the call but cause the sub-call to fail silently?
+- [ ] Storage bloat: can attacker grow unbounded arrays/mappings at protocol's expense?
+- [ ] Forced Ether via `selfdestruct` / `SENDALL` breaking balance invariants
 
 ## Flash Loan Attack
 - [ ] Function checks collateral/health
 - [ ] Function reads balances/prices that can change within tx
 - [ ] Function assumes balances are "stable" within a block
 - [ ] There's a callback that gives attacker control mid-execution
+- [ ] ERC-4626 inflation attack: first depositor can inflate share price via direct transfer ("donation attack")
+- [ ] Check for flash loan + oracle manipulation combo paths (borrow → manipulate → extract → repay)
 
 **Flash Loan Attack Spine:**
 ```text
@@ -564,6 +576,27 @@ function testExploit() public {
 - Gas optimization suggestions
 ```
 
+### **Step 6.3: Multi-Layer Severity Matrix**
+Cross-reference guard analysis, invariant detection, and specialized vulnerability checks for composite severity:
+
+```markdown
+| Guard Status | Invariant Status | Specialized Vuln | Composite Severity |
+|-------------|-----------------|-----------------|--------------------|
+| Missing guard | Breaks invariant | Additional vuln found | CRITICAL |
+| Missing guard | Breaks invariant | No additional | CRITICAL |
+| Missing guard | No break | Additional vuln found | HIGH |
+| Missing guard | No break | No additional | HIGH |
+| Guard present | Breaks invariant | Additional vuln found | HIGH |
+| Guard present | Breaks invariant | No additional | HIGH |
+| Guard present | No break | Additional vuln found | MEDIUM-HIGH |
+| Guard present | No break | No additional | LOW/INFO |
+```
+
+**How to use:** For each finding, assess three layers:
+1. **Guard layer**: Is the function missing a `require`/modifier that peer functions enforce? (Semantic Guard Analysis)
+2. **Invariant layer**: Does the issue break a protocol invariant? (State Invariant Detection)
+3. **Vulnerability layer**: Is there an additional exploitable pattern? (Reentrancy, oracle, flash loan, etc.)
+
 ---
 
 ## **Phase 7: Validation & Verification**
@@ -647,6 +680,112 @@ price = oracle.latestAnswer();  // Could be stale/wrong
 - [ ] ERC20 approval race conditions
 ```
 
+### **Step 5.1c: Signature & Replay Analysis**
+For functions that use off-chain signatures:
+
+```markdown
+## Signature Replay Taxonomy
+- [ ] **Same-chain replay**: Can a valid signature be reused on the same contract?
+- [ ] **Cross-chain replay**: Does the domain separator include `block.chainid`?
+- [ ] **Cross-contract replay**: Does the domain include `address(this)`?
+- [ ] **Nonce-skipping**: Can nonces be used out of order? Is nonce incremented on failure?
+- [ ] **Expired signatures**: Is there a deadline/expiry? Is it enforced?
+- [ ] **EIP-712 compliance**: Proper structured data hashing? Domain separator correct?
+- [ ] **`ecrecover` safety**: Does it check for `address(0)` return? Malleable signatures (s-value)?
+- [ ] **Permit/Permit2**: Are permit signatures properly validated? Front-running risk?
+```
+
+### **Step 5.1d: External Call Safety**
+For ALL external token/contract interactions:
+
+```markdown
+## External Call Checklist
+- [ ] **Return values checked**: `transfer()`/`transferFrom()` return value? Use SafeERC20?
+- [ ] **Fee-on-transfer tokens**: Does accounting assume received == sent amount?
+- [ ] **Rebasing tokens**: Does balance change between reads without transfers?
+- [ ] **Non-standard ERC20**: Missing return value (`USDT`), decimals != 18, blocklist tokens
+- [ ] **Unsafe approvals**: Using `approve()` without resetting to 0 first? Infinite approval risk?
+- [ ] **Callbacks**: Can token callbacks (ERC-777, ERC-1155, ERC-721) be exploited?
+- [ ] **Push vs Pull**: Is the protocol pushing funds (can fail) vs letting users pull (safer)?
+```
+
+### **Step 5.1e: Proxy & Upgrade Safety**
+For ALL upgradeable/proxy contracts:
+
+```markdown
+## Proxy Safety Checklist
+- [ ] **Proxy pattern identified**: Transparent / UUPS / Beacon / Diamond (EIP-2535) / Minimal
+- [ ] **Storage collisions**: Are storage slots consistent between implementation versions?
+- [ ] **Uninitialized implementation**: Can the implementation be initialized directly?
+- [ ] **Function selector clashes**: Any selector collisions between proxy admin and implementation?
+- [ ] **Unsafe upgrade paths**: Can an upgrade break storage layout or remove critical functions?
+- [ ] **`delegatecall` target trust**: Is the target immutable or can it be changed by attacker?
+- [ ] **EIP-1967 slots**: Standard admin/implementation/beacon slot locations used?
+```
+
+---
+
+---
+
+## **OWASP Smart Contract Top 10 (2025) Coverage Map**
+
+Use this to verify your audit covers all major risk categories:
+
+| OWASP ID | Category | Methodology Coverage | Workflow Section |
+|----------|----------|---------------------|------------------|
+| SC01 | Access Control | Semantic Guard Analysis, modifier mapping | Step 5.1 (Access Control Bypass) |
+| SC02 | Oracle Manipulation | Oracle/price feed attacks | Step 5.1 (Oracle Manipulation), Step 5.1b |
+| SC03 | Logic Errors | Behavioral decomposition, semantic phases | Step 4.1 (7-step checklist), Phase 2 (workflow2) |
+| SC04 | Input Validation | Edge case testing, bounds checking | Step 5.3, Step 5.1d (External Call Safety) |
+| SC05 | Reentrancy | CEI analysis, call graph, all variants | Step 5.1 (Reentrancy), Phase 4 (workflow2) |
+| SC06 | Unchecked External Calls | Return value checks, weird ERC20 | Step 5.1d (External Call Safety) |
+| SC07 | Flash Loan Attacks | Flash loan spine, ERC-4626 inflation | Step 5.1 (Flash Loan Attack) |
+| SC08 | Integer Overflow | Solidity 0.8+ unchecked, unsafe casting | Step 5.1 (Integer Overflow), Step 5.3 |
+| SC09 | Insecure Randomness | Block variable predictability | Step 4.1 (External Data - Accounting Phase) |
+| SC10 | DoS Attacks | Gas griefing, 63/64 rule, storage bloat | Step 5.1 (Gas Griefing) |
+
+**Extended coverage (beyond OWASP Top 10):**
+| Category | Methodology Coverage | Workflow Section |
+|----------|---------------------|------------------|
+| Proxy/Upgrade Vulnerabilities | Storage collision, uninitialized impl | Step 3.4, Step 5.1e |
+| Signature Replay Attacks | EIP-712, cross-chain, nonce, permit | Step 5.1c |
+| Token Integration (Weird ERC20) | Fee-on-transfer, rebasing, blocklist | Step 5.1d |
+| MEV/Frontrunning | Sandwich, oracle manipulation | Step 5.1 (Frontrunning), Step 5.2 |
+
+---
+
+## **State Invariant Detection Checklist**
+
+For every protocol, systematically check these invariant categories:
+
+```markdown
+## Supply & Balance Invariants
+- [ ] totalSupply == sum of all individual balances
+- [ ] Protocol balance >= sum of all user claims
+- [ ] Shares * pricePerShare == expected underlying value
+
+## Conservation Rules
+- [ ] No value created from nothing (mint without backing)
+- [ ] No value destroyed unaccountably (burn without proper accounting)
+- [ ] Fees + distributions + remaining == original amount
+
+## Ratio & Relationship Invariants
+- [ ] Collateral-to-debt ratio maintained across all operations
+- [ ] Exchange rate monotonicity (if expected)
+- [ ] Share price cannot be manipulated by small deposits
+
+## Monotonic Counters & Checkpoints
+- [ ] Nonces only increase
+- [ ] Timestamps only advance
+- [ ] Epoch/round counters only increment
+- [ ] Accumulated rewards only grow (or have valid decrease reason)
+
+## Synchronized Updates
+- [ ] Related state variables updated atomically
+- [ ] Cross-contract state remains consistent after operations
+- [ ] Index updates don't miss any participants
+```
+
 ---
 
 ## 🎯 **Final Pro Tips**
@@ -658,3 +797,6 @@ price = oracle.latestAnswer();  // Could be stale/wrong
 5. **Sleep on it**: Complex bugs reveal themselves after breaks
 6. **Write it down**: If you can't explain it simply, you don't understand it
 7. **Stay updated**: New vulnerabilities emerge constantly
+8. **Build guard graphs**: Map which functions share state but not guards — the gaps are where bugs hide
+9. **Infer invariants from code, not docs**: The code is its own specification — extract what MUST be true, then find where it isn't
+10. **Layer your analysis**: Guard consistency × invariant integrity × specialized vuln = composite severity
