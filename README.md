@@ -86,7 +86,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 
 | Framework | Lines | Sections | ClaudeSkills Patterns | Ecosystem Lenses |
 |-----------|-------|----------|----------------------|-----------------|
-| **Solidity/EVM** | ~3,100+ | 1–10 | Benchmark + QuillAudits V1 | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline |
+| **Solidity/EVM** | ~3,912 | 1–10 | Benchmark + QuillAudits V1 + evmresearch.io | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline, specification completeness, compiler trust boundary, account abstraction awareness |
 | **Rust** | ~3,017 | 1–10 | Solana + Substrate | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic |
 | **Go/Cosmos** | ~3,700+ | 1–10 | Cosmos C1–C6 + ABCI++ | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface, ABCI++ lifecycle, tx structure |
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
@@ -99,7 +99,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 
 | ClaudeSkills Scanner | Patterns | Integrated Into | Key Additions |
 |---------------------|----------|-----------------|---------------|
-| **QuillAudits V1** | 10 skills | Solidity/EVM Methodology + Playbook + CommandInstruction | Guard consistency, invariant detection, behavioral analysis, reentrancy variants, external call safety, proxy safety, signature replay, oracle/flash loan, input/arithmetic, DoS/griefing, OWASP SC Top 10 (2025) |
+| **QuillAudits V1 + evmresearch.io** | 10 skills + 300+ notes | Solidity/EVM Methodology + Playbook + CommandInstruction | Guard consistency, invariant detection, behavioral analysis, reentrancy variants, external call safety, proxy safety, signature replay, oracle/flash loan, input/arithmetic, DoS/griefing, OWASP SC Top 10 (2025), AA (ERC-4337/EIP-7702/ERC-7579), CPIMP, transient storage (EIP-1153), compiler trust boundary, L2/cross-chain, non-standard token DB (65.8% stat), 40+ exploit DB (2016–2025), specification completeness, formal verification epistemology |
 | Solana | 670+ lines | Rust CommandInstruction + Methodology | CPI, PDA, ownership, signer checks |
 | Cosmos | 741+ lines | Go CommandInstruction + Methodology + Cosmos-SDK | GetSigners, non-determinism, ABCI panic/slow, bookkeeping, ABCI++ lifecycle, module integration, tx structure attacks |
 | Substrate | 792+ lines | Rust CommandInstruction + Methodology | Weights/fees, verify-first, unsigned validation |
@@ -179,6 +179,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 2.1
+**Framework Version:** 3.0 (SolidityEVM), 2.1 (all others)
 **Last Updated:** February 2026
 **License:** MIT
