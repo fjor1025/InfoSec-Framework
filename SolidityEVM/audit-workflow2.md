@@ -1,6 +1,6 @@
 # Smart Contract Audit Methodology - Semantic Phase Analysis
 
-> **Version:** 2.1 — Enhanced with Semantic Guard Analysis and State Invariant Detection
+> **Version:** 3.0 — Enhanced with Specification Completeness Analysis, Compiler Verification, evmresearch.io knowledge graph integration
 > **Integration Note:** This file contains the semantic phase methodology (SNAPSHOT→COMMIT).
 > For conversation structure, see `../Audit_Assistant_Playbook.md`.
 > For the system prompt, see `CommandInstruction.md`.
@@ -297,26 +297,34 @@ For EACH phase, test specific attacks:
 - [ ] **Frontrunning**: State read → tx in mempool → state changes
 - [ ] **Reentrancy**: Snapshot → external call → reenter → snapshot different
 - [ ] **Stale Data**: Using old oracle prices/storage
+- [ ] **EIP-1153 cross-call leakage**: Transient storage values from prior external call still present
+- [ ] **EIP-7702 code mutation**: msg.sender has code (delegated EOA) but snapshot assumed EOA
 
 **Accounting Phase Attacks:**
 - [ ] **Time manipulation**: `block.timestamp` jumps
-- [ ] **Oracle manipulation**: Price feed attacks
-- [ ] **Rounding errors**: Accumulator precision loss
+- [ ] **Oracle manipulation**: Price feed attacks, Chainlink min/maxAnswer bounds, L2 sequencer downtime
+- [ ] **Rounding errors**: Accumulator precision loss, mul-before-div violations
+- [ ] **Newton-Raphson divergence**: AMM math solver non-convergence
 
 **Validation Phase Attacks:**
 - [ ] **Bypass**: Missing checks, wrong order
 - [ ] **DoS**: Gas griefing on validation
 - [ ] **Logic flaws**: Wrong condition checks
+- [ ] **Developer assumption gaps**: 8 subtypes of implicit preconditions never enforced
+- [ ] **EIP-7702 assumption invalidation**: tx.origin / isContract() / extcodesize checks broken
 
 **Mutation Phase Attacks:**
 - [ ] **Value theft**: Incorrect balance updates
-- [ ] **Overflow/underflow**: Math errors
-- [ ] **Slippage**: Missing limits
+- [ ] **Overflow/underflow**: Math errors, Yul div-by-zero returns 0 (not revert)
+- [ ] **Slippage**: Missing limits, block.timestamp-as-deadline (always passes)
+- [ ] **Complementary function asymmetry**: deposit/withdraw don't mirror all state mutations
 
 **Commit Phase Attacks:**
 - [ ] **Inconsistent state**: Partial writes
 - [ ] **Missing events**: No logs for state changes
-- [ ] **Storage collisions**: Proxy/upgrade issues
+- [ ] **Storage collisions**: Proxy/upgrade/EIP-7702 re-delegation issues
+- [ ] **CPIMP window**: Gap between proxy deployment and initialization commit
+- [ ] **Transient storage cleanup**: Stale TSTORE values affecting subsequent operations
 
 ### **Step 4.2: Cross-Phase Attack Scenarios**
 Test interactions BETWEEN phases:
@@ -540,4 +548,97 @@ Total ≥7: HIGH confidence (likely valid finding)
 Total 4-6: MEDIUM confidence (needs deeper analysis)
 Total ≤3: LOW confidence (theoretical / unlikely)
 ```
+
 ---
+
+## **Phase 8: Specification Completeness Analysis**
+
+> **Context**: 92% of smart contracts exploited in 2025 had passed security reviews.
+> The specification completeness gap—not code correctness—is the primary audit failure mode.
+> ($3.1B stolen despite audits in 2025)
+
+### **Step 7.5: Developer Assumption Inventory**
+For EACH function, enumerate implicit preconditions the developer NEVER wrote as explicit checks:
+
+```markdown
+## 8 Developer Assumption Subtypes
+
+1. **Step Ordering**: Function assumes prior function was called (e.g., initialize before use)
+2. **Empty Arrays/Zero State**: Function assumes non-empty collections or non-zero values
+3. **Unchecked Returns**: Function assumes external call succeeded without verifying
+4. **Unexpected Matching Inputs**: Function assumes from != to, tokenA != tokenB
+5. **Uniqueness**: Function assumes array/list elements are unique
+6. **Mutual Exclusivity**: Function assumes only one of N conditions can be true
+7. **Boundedness**: Function assumes values are within reasonable ranges without enforcing
+8. **Sentinel Reliability**: Function assumes sentinel values (type(uint256).max, address(0)) maintain special meaning
+
+## Inventory Process
+For each function:
+1. List all `require` / `assert` / `if` checks
+2. List all UNSTATED assumptions (what the developer expects to be true but never checks)
+3. For each unstated assumption, ask: "Can an adversary violate this?"
+4. Flag violations as hypothesis candidates
+```
+
+### **Step 7.6: Cross-Cutting Synthesis Patterns**
+Look for attack patterns that span multiple vulnerability categories:
+
+```markdown
+## Temporal Gap Exploitation
+Attacks that exploit the time window between two related operations:
+- Proxy deploy → initialize gap (CPIMP)
+- Approval → transfer gap (front-running)
+- Proposal → execution gap (metamorphic substitution)
+- Audit → deployment gap (post-audit code changes)
+- Oracle update → price consumption gap (stale data)
+
+## Indefinite Capability Grants
+Permissions granted without expiration or bounded scope:
+- Infinite approvals without revocation
+- Admin roles without timelock
+- TimelockController queued proposals without expiry
+- EIP-7702 delegation without revocation mechanism
+- Module installations without uninstall guarantee (ERC-7579 lock)
+
+## Compositional Failure Cascade
+Single-point failures that propagate through interconnected systems:
+- Balancer → Euler → Morpho → Lista (Nov 2025 cascade)
+- LST depeg → lending protocol liquidation cascade
+- Oracle failure → all dependent protocols affected
+- Bridge exploit → wrapped token worthless on destination chain
+
+## Trust Boundary Collapse
+Assumptions about external systems that silently fail:
+- "Compiler produces correct bytecode" (via-IR bugs)
+- "Block explorer shows real implementation" (event spoofing)
+- "Token behavior is stable" (upgradeable proxy tokens)
+- "L2 has same opcodes as L1" (PUSH0, SELFDESTRUCT divergence)
+```
+
+### **Step 7.7: Verification Tool Strategy**
+Guide for choosing verification approaches:
+
+```markdown
+## Tool Selection Based on Bug Class
+| Bug Class | Best Tool | Why |
+|-----------|-----------|-----|
+| Rare-input math bugs (P < 1/2^80) | Formal Verification (SMT) | Provably unreachable by sampling |
+| Stateful multi-step sequences | Invariant Fuzzing | Explores N-transaction sequences |
+| Economic/pricing model errors | Manual Expert Review | Neither FV nor fuzzing catches these |
+| Compiler-assumption bugs | Cross-language specification | Different spec language reveals compiler divergence |
+| Known vulnerability patterns | Static Analysis (Slither, etc.) | Pattern matching at scale |
+
+## Key Insight: The 60% Ceiling
+Automated tools combined catch ~60% of exploitable vulnerabilities.
+The remaining 40% requires human expertise in:
+- Economic modeling (pricing model soundness)
+- Compositional reasoning (multi-protocol interactions)
+- Rounding accumulation over N operations
+- Oracle manipulation feasibility assessment
+
+## Formal Verification Epistemology
+- FV proves code matches a specification — NOT that the specification is correct
+- 92% post-audit exploit rate shows mathematical certainty of incomplete specs provides no safety guarantee
+- Complex multi-step interaction invariants are the class BOTH human auditors and tools most commonly miss
+- Writing correct invariants = 80% of verification work; tool choice is secondary to specification quality
+```

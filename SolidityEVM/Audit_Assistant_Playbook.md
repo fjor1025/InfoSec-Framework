@@ -1,7 +1,7 @@
 # Audit Assistant Playbook
 Cognitive Framework for Smart Contract Auditing
 
-* Version: 2.1 — Enhanced with QuillAudits Claude Skills V1 patterns
+* Version: 3.0 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security
 * Status: Experimental / Practitioner Tool
 * Audience: Experienced smart contract auditors
 
@@ -39,11 +39,19 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 **Key Methodology Concepts to Apply:**
 - **Semantic Phases**: SNAPSHOT → ACCOUNTING → VALIDATION → MUTATION → COMMIT
 - **Validation Checks**: Reachability, State Freshness, Execution Closure, Economic Realism
-- **Known Exploit Patterns**: Euler, Cream, Nomad, Wormhole, Curve read-only reentrancy, etc.
+- **Known Exploit Patterns**: Euler, Cream, Nomad, Wormhole, Curve read-only reentrancy, Bybit $1.5B, Penpie, SIR.trading, USPD CPIMP, EIP-7702 delegation phishing, Balancer cascade, etc.
 - **Guard Consistency**: Semantic Guard Analysis — usage graph of `require`/modifier checks
 - **State Invariant Detection**: Infer mathematical relationships, check all functions
 - **OWASP SC Top 10 (2025)**: SC01–SC10 coverage mapping
 - **Time-Boxing**: 40/40/20 rule for large codebases
+- **Specification Completeness**: 92% of 2025 exploited contracts passed reviews — spec gap is primary failure mode
+- **Account Abstraction**: ERC-4337 / EIP-7702 / ERC-7579 attack surface analysis
+- **CPIMP**: Cross-Proxy Intermediary Malware Pattern — proxy deployment atomicity
+- **Transient Storage**: EIP-1153 cross-call persistence, compiler bugs (SOL-2026-1)
+- **Compiler Trust Boundary**: via-IR divergence, optimizer, pipeline-specific bugs
+- **Developer Assumption Inventory**: 8 subtypes of unstated preconditions
+- **Cross-Cutting Synthesis**: Temporal gaps, indefinite capability grants, compositional cascades
+- **Verification Strategy**: FV vs fuzzing vs manual — 60% ceiling for automated tools
 
 ---
 
@@ -316,19 +324,30 @@ Constraints:
   - grounded in protocol design and trust assumptions.
 - Do NOT include purely speculative or unrealistic attacks.
 - Reference known exploit patterns from [audit-workflow1.md, Step 5.1b]:
-  - Price/Oracle: Euler, Cream, Harvest
-  - Reentrancy: DAO, Curve read-only, ERC777 hooks
-  - Access Control: Nomad, Wormhole, Parity
-  - Flash Loan: bZx, PancakeBunny, Rari/Fei
+  - Price/Oracle: Euler, Cream, Harvest, Mango Markets, yETH, Bunni
+  - Reentrancy: DAO, Curve read-only, ERC777 hooks, SIR.trading (EIP-1153), Fei/Rari
+  - Access Control: Nomad, Wormhole, Parity, WazirX
+  - Flash Loan: bZx, PancakeBunny, Rari/Fei, Beanstalk (governance)
+  - Supply Chain: Bybit ($1.5B), Radiant ($53M), Orbit Chain ($82M)
+  - CPIMP: USPD ($1M), EtherFi/Pendle/Orderly (Jul 2025)
+  - AA: ERC-4337 pack() bug, EIP-7702 delegation phishing ($12M+)
+  - Compiler: Curve/Vyper CVE-2023-46247, Solidity SOL-2026-1
+  - Composability: Furucombo, SushiSwap, Balancer cascade (Nov 2025)
 - Reference OWASP SC Top 10 (2025) categories from [audit-workflow1.md, OWASP Coverage Map]:
   - SC01 Access Control, SC02 Oracle, SC03 Logic, SC04 Input, SC05 Reentrancy
   - SC06 Unchecked Calls, SC07 Flash Loan, SC08 Overflow, SC09 Randomness, SC10 DoS
 - Include guard consistency and invariant violation hypotheses:
   - Functions missing guards that peers enforce (Semantic Guard Analysis)
   - Mathematical invariants that could break under edge cases (State Invariant Detection)
-  - External call safety: fee-on-transfer, rebasing, weird ERC20 assumptions
-  - Proxy/upgrade: storage collisions, uninitialized implementations
-  - Signature replay: cross-chain, nonce skipping, expired permits
+  - External call safety: fee-on-transfer, rebasing, weird ERC20 (20+ non-standard behaviors)
+  - Proxy/upgrade: storage collisions, uninitialized implementations, CPIMP
+  - Signature replay: cross-chain, nonce skipping, expired permits, EIP-7702, BLS
+  - Account Abstraction: ERC-4337 paymaster drainage, EIP-7702 delegation, ERC-7579 module lock
+  - Transient storage: EIP-1153 cross-call persistence, bundle contamination
+  - Compiler: via-IR pipeline divergence, optimizer, SOL-2026-1
+  - Developer assumptions: 8 subtypes of unstated preconditions
+  - Cross-cutting: temporal gaps, indefinite capability grants, compositional cascades
+  - L2/cross-chain: opcode divergence, sequencer risks, message verification
 
 Output STRICTLY in the following format:
 
@@ -1355,6 +1374,311 @@ Do NOT:
 - Propose PoCs
 - Speculate wildly
 - List obvious or boilerplate issues
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Account Abstraction & EIP-7702
+```text
+Context:
+Perform a security scan focused on Account Abstraction attack surfaces.
+
+Goal:
+Identify potential issues arising from ERC-4337, EIP-7702, and ERC-7579 interactions.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all assumptions about msg.sender, tx.origin, and extcodesize.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- tx.origin assumptions invalidated by EIP-7702 (delegated EOAs)
+- msg.sender code assumptions (extcodesize, isContract) broken by 0xef0100 delegation prefix
+- ERC-4337 EntryPoint interactions and paymaster trust
+- Signature validation: SIG_VALIDATION_FAILED vs revert
+- Cross-wallet signature replay (missing account-specific EIP-712 domain binding)
+- Counterfactual wallet takeover (CREATE2 salt without owner credentials)
+- Paymaster gas penalty exploitation (inflated callGasLimit)
+- Transient storage contamination in multi-UserOperation bundles
+- ERC-7579 module delegatecall storage access and uninstall lock
+- EIP-7702 chainId=0 cross-chain authorization amplification
+- Storage collision on EIP-7702 re-delegation (existing storage NOT cleared)
+
+Output:
+Bulleted list.
+For each item:
+- The AA-specific concern
+- Which assumption is invalidated
+- Affected contracts/functions
+- Whether the concern is code-level or infrastructure-level
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN CPIMP & Deployment Safety
+```text
+Context:
+Perform a security scan focused on Cross-Proxy Intermediary Malware Pattern (CPIMP)
+and deployment safety.
+
+Goal:
+Identify potential front-running windows between proxy deployment and initialization.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all proxy deployment patterns and initialization flows.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Proxy deployment atomicity: is deploy + initialize a single transaction?
+- Front-runnable initialization windows
+- Re-initialization possibilities (initializer vs reinitializer)
+- CREATE2 deterministic deployment for multi-contract systems
+- Post-deployment verification: can ERC-1967 slot be read directly?
+- Event spoofing: can emitted events misdirect about implementation address?
+- Block explorer reliance: can displayed implementation differ from actual?
+- Process-layer vulnerabilities: deployment sequencing, upgrade windows invisible to code analysis
+
+Output:
+Bulleted list.
+For each item:
+- The deployment safety concern
+- Time window or front-running opportunity
+- Affected contracts and deployment flow
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Transient Storage & EIP-1153
+```text
+Context:
+Perform a security scan focused on EIP-1153 transient storage usage.
+
+Goal:
+Identify potential issues with transient storage semantics and cross-call persistence.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all TSTORE/TLOAD usage and assumptions about data lifetime.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Cross-call persistence: transient values surviving external calls within a transaction
+- Reentrancy lock bypass via transient storage
+- ERC-4337 bundle contamination: transient values leaking between UserOperations
+- Composability assumptions: protocols expecting single-call isolation
+- Compiler bug SOL-2026-1: via-IR clearing both persistent and transient variables of same type
+- Transient storage as pseudo-reentrancy guard: does it actually prevent re-entry?
+- Gas implications: quadratic memory expansion costs
+
+Output:
+Bulleted list.
+For each item:
+- The transient storage concern
+- The composability assumption violated
+- Affected contracts/functions
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN L2 & Cross-Chain Security
+```text
+Context:
+Perform a security scan focused on L2 deployment and cross-chain security.
+
+Goal:
+Identify potential issues from L2-specific behavior and cross-chain trust boundaries.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all cross-chain assumptions and L2-specific code paths.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Opcode divergence: PUSH0, CREATE/CREATE2, SELFDESTRUCT behavior differences across L2s
+- EIP-6780 adoption: SELFDESTRUCT restrictions NOT adopted on all L2s
+- Sequencer centralization: downtime handling, forced inclusion bypass
+- Chainlink L2 sequencer uptime feed: required before consuming price data on L2
+- Bridge message verification: #1 vulnerability class in DeFi audits (61 findings empirical)
+- Lock-and-mint architecture: concentrated target risk
+- Mint-burn asymmetry: destination minting without verified source locking
+- Finality assumptions: relay before source chain confirms = reorg attack window
+- ZK proof replay: public inputs not bound to transaction-specific parameters
+- DA saturation and prover killer attacks: EVM gas / ZK proving cost mismatch
+- Cross-chain composability: different trust boundaries breaking security assumptions
+- Metamorphic contracts: still exploitable on L2s without EIP-6780
+
+Output:
+Bulleted list.
+For each item:
+- The L2/cross-chain concern
+- Which chains or environments are affected
+- The trust boundary or assumption at risk
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Token Integration Deep Dive
+```text
+Context:
+Perform a deep security scan focused on non-standard token integration behaviors.
+
+Goal:
+Identify potential issues from the protocol's assumptions about token behavior,
+given that 65.8% of deployed ERC-20s exhibit non-standard behaviors.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all token interactions against the non-standard behavior database.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Fee-on-transfer: accounting assumes received == sent
+- Rebasing tokens (stETH, aTokens): balance changes between reads
+- Low-decimal tokens (GUSD: 2 decimals): vault inflation attack cost reduction
+- Pausable/blocklist tokens (USDC, USDT): liquidation halt during price decline
+- Flash-mintable tokens: totalSupply inflation affecting governance/pricing
+- Upgradeable proxy tokens: USDC/USDT behavior can change post-integration
+- Non-standard permit (DAI/RAI/GLM): silent return on bad signatures
+- cUSDCv3 max-uint256 reinterpretation as "full balance"
+- Dual ETH/WETH paths: double-counting on multi-chain (Celo/Polygon/zkSync)
+- ERC-20 approval incompatibility matrix (USDT/BNB/OZ/permit)
+- ERC-2612 permit phishing ($35M+ exploited)
+- ERC-777 arbitrary hook assignment via ERC-1820 registry
+- ERC-3156 flash loan side entrance and arbitrary initiator attacks
+- Rebasing in AMMs: cached reserves diverge → free arbitrage
+
+Output:
+Bulleted list.
+For each item:
+- The specific token behavior assumption
+- Which tokens would violate it
+- Affected protocol functions
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Compiler & Specification Completeness
+```text
+Context:
+Perform a security scan focused on compiler trust boundary and specification gaps.
+
+Goal:
+Identify potential issues from compiler behavior, pipeline configuration,
+and unstated developer assumptions.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check compiler version, pipeline flags, and developer assumptions.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Pragma version: exact vs floating
+- via-IR pipeline: enabled? Known bugs (SOL-2026-1)?
+- Optimizer settings: runs count, potential removal of "redundant" checks
+- ABIEncoderV2 behavioral differences
+- Yul/assembly div-by-zero returning 0 (not revert)
+- Solidity pure/STATICCALL false guarantee: pure cannot prevent state reads at EVM level
+- Modifier early returns: explicit returns don't affect function return values
+- Developer assumption gaps (8 subtypes):
+  - Step ordering, empty arrays, unchecked returns, unexpected matching
+  - Uniqueness, mutual exclusivity, boundedness, sentinel reliability
+- Audit coverage expiration: post-audit assumption changes
+- Complementary function pair asymmetry: inverse functions not mirroring all state mutations
+
+Output:
+Bulleted list.
+For each item:
+- The compiler behavior or assumption concern
+- Where it appears in the code
+- The potential for behavioral divergence or specification gap
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Governance & Timelock
+```text
+Context:
+Perform a security scan focused on governance mechanisms and timelock patterns.
+
+Goal:
+Identify potential governance attack vectors and access control lifecycle issues.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all governance, voting, and timelock patterns.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- Flash loan governance: can voting power be acquired and used within one block?
+- Snapshot-based voting: power measured at proposal creation time?
+- CREATE2 metamorphic proposals: can proposal target code change between approval and execution?
+- TimelockController: queued proposals without expiry? No-expiry = indefinite capability grant
+- Emergency function paradox: emergency powers becoming the attack vector
+- Low-participation quorum manipulation
+- Rage quit mechanisms: credible exit threat vs governance DoS weapon
+- Proposal code integrity verification at execution time (not just approval)
+- Governance token concentration and delegation risks
+
+Output:
+Bulleted list.
+For each item:
+- The governance concern
+- Affected contracts/functions
+- The specific attack or failure mode
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Liquidation & DeFi Economics
+```text
+Context:
+Perform a security scan focused on liquidation mechanisms and DeFi economic design.
+
+Goal:
+Identify potential failures in liquidation, lending, and economic mechanisms.
+
+Instructions:
+- Use the full code from merged.txt.
+- Check all liquidation, lending, and collateral-related logic.
+- Do NOT validate exploits or assign severity.
+
+Focus areas:
+- 5 distinct liquidation failure mechanisms (each requires separate defense)
+- Self-liquidation via flash loan (borrow → trigger own liquidation → profit from bonus)
+- Fixed liquidation bonus revert below threshold (most underwater = unliquidatable)
+- Asymmetric pause: repayments paused but liquidations active
+- No grace period after unpause (instant liquidation race)
+- Dust repayment front-running (liquidation DoS)
+- 13 operational DoS mechanisms beyond economic failures
+- Collateral in pausable tokens (USDC/USDT): halt during price decline → bad debt
+- 100% utilization depositor trapping
+- Oracle bounds: Chainlink min/maxAnswer stale price
+- Interest rate curve failures at extreme utilization
+- Borrower-liquidator timing/information asymmetry (11 patterns)
+
+Output:
+Bulleted list.
+For each item:
+- The economic/liquidation concern
+- Affected contracts/functions
+- The specific failure mode
 
 Language:
 Respond in Russian.
