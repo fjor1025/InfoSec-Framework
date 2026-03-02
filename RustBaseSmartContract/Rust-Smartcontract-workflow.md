@@ -549,6 +549,8 @@ let issues = vec![
 
 Use these automated tools to supplement manual review. Run them BEFORE manual deep dives (Phase 4) to generate a prioritized signal list.
 
+> **Note:** For builder-side secure coding rules and the "Curiosity Principle" adversarial mindset, see **Step 6.7: Safe Solana Builder Patterns** below.
+
 #### **Tool 1: solana-fender (AST-based, 19 analyzers)**
 ```bash
 # Install and run solana-fender against your Anchor/native program
@@ -1040,7 +1042,172 @@ echo "=== FFI / EXTERN ==="
 grep -rn "extern \"C\"\|#\[no_mangle\]\|c_char\|c_void" src/ | grep -v test
 ```
 
-### **Step 7.1: Rust-Specific Finding Template**
+### **Step 6.7: Safe Solana Builder Patterns (Frank Castle)**
+
+Secure coding rules from real audit findings. Apply both when **auditing** (check that code follows these) and **building** (ensure code is written this way). Source: [safe-solana-builder](https://github.com/Frankcastleauditor/safe-solana-builder).
+
+#### **6.7a: Risk Assessment (before deep dive)**
+
+Classify every Solana program at audit start — determines how thorough the review must be:
+
+| Level | Criteria | Examples | Audit Depth |
+|-------|----------|----------|-------------|
+| 🟢 Low | No SOL/token custody, no CPI, single user, read-heavy | Counter, registry, simple config | Standard checklist |
+| 🟡 Medium | Token transfers, basic CPI, multi-user state, PDAs | Staking, voting, simple escrow | Full checklist + edge cases |
+| 🔴 Critical | Vaults, multi-CPI chains, admin keys, large TVL potential | AMM, lending, NFT launchpad, bridges | Full checklist + adversarial + threat model |
+
+For 🔴 Critical programs: require a "High-Risk Decisions" section flagging every admin key, upgrade authority, and irreversible state transition.
+
+#### **6.7b: Account & Identity Validation (shared-base rules)**
+
+Every account that enters a Solana program is **untrusted by default.** Verify during audit:
+
+| Check | Audit Question | Pattern |
+|-------|---------------|---------|
+| **Signer** | Is `is_signer` verified on every authority/admin account? | Account presence ≠ authorization |
+| **Ownership** | Is `account.owner == expected_program_id` checked before deserialization? | Spoofed data from malicious program |
+| **Data Matching** | Do related accounts validate their relationships? (`has_one` / manual pubkey compare) | Wrong vault accepted for the wrong user |
+| **Type Cosplay** | Does every account type have a unique discriminator? | Admin account passed as User account |
+| **Reinitialization** | Is initialize callable exactly once? (`init` preferred over `init_if_needed`) | Authority overwrite via double-init |
+| **Writable** | Are only accounts marked `is_writable` modified? | Silent corruption on non-writable mutation |
+
+#### **6.7c: PDA Security Rules (shared-base rules)**
+
+| Rule | Audit Check | Failure Mode |
+|------|-------------|--------------|
+| **Canonical bump only** | Is `find_program_address` used? Is bump stored and reused? | Attacker pre-mines bump → PDA collision |
+| **PDA sharing prevention** | Do seeds include user `Pubkey` for per-user state? | One user affects another's state |
+| **Seed collision prevention** | Do all PDA types use unique string prefixes? | `["AB","C"]` == `["A","BC"]` — same PDA |
+| **PDA purpose isolation** | One PDA per logical domain? (vault, escrow, config = separate) | Cross-domain privilege escalation |
+
+#### **6.7d: CPI Safety Surface (shared-base rules)**
+
+CPI is the most complex attack surface in Solana. Audit every CPI call for:
+
+| SSB Rule | What to Check | Pattern ID |
+|----------|---------------|------------|
+| **Validate program IDs** | Is CPI target hardcoded or verified? Never user-provided without allowlist | SSB-CPI-1 |
+| **Reload after CPI** | Is `.reload()` called on every account touched by the CPI? | SSB-CPI-2 |
+| **Signer pass-through** | Are accounts iterated to ensure `!is_signer` for those not needing it in CPI? | SSB-CPI-3 |
+| **SOL balance check** | Is signer balance recorded before CPI and verified after? | SSB-CPI-4 |
+| **Post-CPI ownership** | Is account owner re-verified after CPI? (attacker-controlled program can `assign`) | SSB-CPI-5 |
+| **Error propagation** | Is CPI wrapped with `?`? Some programs return "Success" without executing | SSB-CPI-6 |
+| **invoke vs invoke_signed** | Is `invoke_signed` only used when PDA must sign? Never elevate non-signers | SSB-CPI-7 |
+| **Blast radius** | Are user-specific PDAs used (not a global vault)? | SSB-CPI-8 |
+
+#### **6.7e: Duplicate Mutable Account Attacks**
+
+Check: Can the same account be passed for two different roles?
+
+```rust
+// VULNERABLE: No distinct-account constraint
+pub struct Transfer<'info> {
+    #[account(mut)]
+    pub source: Account<'info, Vault>,
+    #[account(mut)]
+    pub destination: Account<'info, Vault>,
+}
+// Attacker passes same account for source AND destination → free "transfer" to self
+
+// SECURE: Enforce distinctness
+#[account(
+    mut,
+    constraint = source.key() != destination.key() @ ErrorCode::SameAccount,
+)]
+pub source: Account<'info, Vault>,
+```
+
+**Audit question for every pair of mutable accounts:** *"What happens if an attacker passes the same account for both?"*
+
+#### **6.7f: Token-2022 Compatibility**
+
+Check: Does the program use legacy `token::transfer` or the compatible `token_interface::transfer_checked`?
+
+| Pattern | Safe | Unsafe |
+|---------|------|--------|
+| Token transfer | `token_interface::transfer_checked` | `anchor_spl::token::transfer` (legacy-only, DoS on Token-2022 mints) |
+| Account type | `InterfaceAccount<'info, TokenAccount>` | `Account<'info, TokenAccount>` (legacy-only) |
+| Program type | `Interface<'info, TokenInterface>` | `Program<'info, Token>` (legacy-only) |
+| Mint validation | Always verify `mint.decimals` + `mint.is_initialized` | Skip decimals check |
+
+> **Flag in audit:** Any use of `anchor_spl::token::transfer` (without `_checked`) or `Program<'info, Token>` (instead of `Interface<'info, TokenInterface>`) is a 🔴 Token-2022 compatibility gap.
+
+#### **6.7g: Anchor-Specific Pitfalls**
+
+| Pattern | Safe Version | Unsafe Version | SSB ID |
+|---------|-------------|----------------|--------|
+| Account wrapping | `Account<'info, T>` | `AccountInfo` without `/// CHECK:` | SSB-ANC-1 |
+| Initialization | `init` constraint | `init_if_needed` without reinitialization guard | SSB-ANC-2 |
+| Cross-account link | `has_one = field` | Manual pubkey compare inside function body | SSB-ANC-3 |
+| Closing accounts | `close = recipient` constraint | Manual lamport drain without ownership transfer | SSB-ANC-4 |
+| After-CPI data use | `.reload()?` | Using cached struct values | SSB-ANC-5 |
+| Token transfers | `transfer_checked` via `token_interface` | `token::transfer` (legacy only) | SSB-ANC-6 |
+| PDA derivation | `seeds + bump` with stored canonical bump | User-supplied bump | SSB-ANC-7 |
+| Memory resize | `realloc` with `zero_init = true` | Raw realloc without zeroing (stale dirty memory) | SSB-ANC-8 |
+| Error reporting | `#[error_code]` with descriptive messages | `ProgramError::Custom(0)` or panics | SSB-ANC-9 |
+
+#### **6.7h: Native Rust Mandatory Validation Sequence**
+
+For native Rust (non-Anchor) Solana programs, verify every account goes through the **6-step validation sequence** in this exact order:
+
+```
+1. Key check       — is this the account I expect (if fixed)?
+2. Owner check     — does the right program own this account?
+3. Signer check    — does this account need to have signed?
+4. Writable check  — does this account need to be writable?
+5. Discriminator   — does the data belong to the expected type?
+6. Data validation — are fields within expected ranges?
+```
+
+**Never skip steps. Never reorder them.**
+
+Additional native Rust checks:
+- `try_from_slice()` used for all deserialization (never raw byte casting / transmute)
+- Data length verified before deserialization (`account.data_len() >= T::LEN`)
+- Mutable and immutable borrows never held simultaneously on same account
+- Account creation CPI uses `rent.minimum_balance(size)` (never hardcoded lamports)
+- Account close follows 3-step sequence: zero data → transfer lamports → assign to System Program
+- Custom error enum with descriptive messages (never `ProgramError::Custom(0)`)
+- No `unwrap()` / `expect()` in instruction handlers
+
+#### **6.7i: The Curiosity Principle (Adversarial Mindset)**
+
+For every account input in every Solana program, systematically ask these 6 questions:
+
+| # | Question | Attack Pattern |
+|---|----------|----------------|
+| 1 | "What happens if I pass the *same account twice*?" | Duplicate mutable account attack |
+| 2 | "What happens if this account is *owned by a different program*?" | Type cosplay / ownership bypass |
+| 3 | "What happens if this is a *Token-2022 mint* instead of a legacy mint?" | DoS / wrong program invoked |
+| 4 | "What happens if the CPI I'm calling *returns success but didn't do anything*?" | Silent logic failure |
+| 5 | "What happens if an attacker passes a *valid-looking but malicious program ID*?" | Arbitrary CPI |
+| 6 | "What's the worst case if this account's *bump is not canonical*?" | PDA collision |
+
+Apply this to **every design decision, every account struct, every CPI call**.
+
+#### **6.7j: Account Storage & Lifecycle Rules**
+
+| Rule | What to Verify |
+|------|---------------|
+| No state in program account | State stored in separate data accounts only |
+| Owner field set correctly | State accounts owned by your program |
+| Rent exemption | New accounts funded with ≥ `rent.minimum_balance(size)` |
+| Close anti-revival | Close = zero data + drain lamports + assign to System Program (all three steps) |
+| Close recipient trusted | Rent lamports go to initializer or program-controlled address (never arbitrary) |
+| Sysvar verification | Sysvar account pubkey matches known canonical address |
+| Data size limits | No account > 10 MiB, no per-tx resize > 20 MiB |
+
+#### **6.7k: Transaction Model Safety**
+
+| Rule | What to Verify |
+|------|---------------|
+| Atomicity | Multi-operation flows composed in single tx for all-or-nothing |
+| Compute budget | Complex instructions use `SetComputeUnitLimit`; no unbounded loops |
+| Address Lookup Tables | Signer accounts NOT included in ALT (must be inline) |
+| Durable Nonces | `AdvanceNonceAccount` is first instruction; nonce blockhash not recent |
+| SOL balance slippage | Signer balance checked before/after CPI — no excess spend |
+
+---
 ```markdown
 ## [HIGH/MEDIUM/LOW] Rust-Specific Issue
 
@@ -1755,6 +1922,178 @@ pub struct Initialize<'info> {
 
 ---
 
+### **Safe Solana Builder Detection Patterns (Frank Castle)**
+
+These patterns complement the S1–S12 detection patterns above with deeper builder-side security rules from real audit findings.
+
+#### Pattern SSB1: Signer Pass-Through in CPI ⚠️ HIGH
+**Description**: Accounts marked as signers in the current transaction remain signers in CPIs. An attacker-controlled CPI callee receives unintended signer authority. [SSB-CPI-3]
+
+```rust
+// VULNERABLE: All accounts passed to CPI — some are signers that shouldn't be
+invoke(
+    &external_instruction,
+    &ctx.remaining_accounts.to_vec(),  // Passes ALL accounts including signers!
+)?;
+
+// SECURE: Only pass required accounts, verify signer status
+let cpi_accounts = vec![
+    ctx.accounts.vault.to_account_info(),  // Not a signer — safe
+    ctx.accounts.token_program.to_account_info(),
+];
+// Verify no unintended signer privileges
+for acc in &cpi_accounts {
+    assert!(!acc.is_signer || explicitly_needs_signer(acc));
+}
+invoke(&external_instruction, &cpi_accounts)?;
+```
+
+#### Pattern SSB2: SOL Balance Drain via CPI ⚠️ HIGH
+**Description**: Solana has no `msg.value` — a callee can spend SOL from a signing account during CPI. Without before/after balance checks, excess SOL drain goes undetected. [SSB-CPI-4]
+
+```rust
+// VULNERABLE: No SOL balance verification around CPI
+token::transfer(cpi_ctx, amount)?;
+// Callee could have drained additional SOL from signer
+
+// SECURE: Record and verify signer balance around CPI
+let balance_before = ctx.accounts.signer.lamports();
+token::transfer(cpi_ctx, amount)?;
+let balance_after = ctx.accounts.signer.lamports();
+require!(
+    balance_before <= balance_after + expected_cost + 10_000, // fee buffer
+    ErrorCode::ExcessiveSpend
+);
+```
+
+#### Pattern SSB3: Post-CPI Ownership Change ⚠️ CRITICAL
+**Description**: An attacker-controlled program can call `assign` to change an account's owner during CPI. Post-CPI, you're operating on an account now owned by attacker. [SSB-CPI-5]
+
+```rust
+// VULNERABLE: No ownership re-verification after CPI
+invoke(&external_instruction, &accounts)?;
+// Attacker's program changed account owner via assign()
+let data = vault.try_borrow_data()?; // Reading attacker-controlled data!
+
+// SECURE: Re-verify owner after CPI
+invoke(&external_instruction, &accounts)?;
+require_keys_eq!(
+    *vault.owner,
+    crate::ID,
+    ErrorCode::OwnershipChanged
+);
+```
+
+#### Pattern SSB4: init_if_needed Without Guard ⚠️ HIGH
+**Description**: `init_if_needed` skips creation if account exists, but doesn't validate existing state. Attacker can pre-create the account with malicious state (e.g., a different authority). [SSB-ANC-2]
+
+```rust
+// VULNERABLE: init_if_needed trusts existing account state
+#[account(init_if_needed, payer = user, space = 8 + Config::LEN)]
+pub config: Account<'info, Config>,
+// If account pre-exists, attacker's authority field is accepted!
+
+// SECURE: Explicitly validate existing state
+#[account(init_if_needed, payer = user, space = 8 + Config::LEN)]
+pub config: Account<'info, Config>,
+
+// In handler:
+if config.initialized {
+    require_keys_eq!(config.authority, user.key(), ErrorCode::AuthorityMismatch);
+}
+```
+
+#### Pattern SSB5: realloc Without zero_init ⚠️ MEDIUM
+**Description**: Resizing an account after a prior decrease in the same transaction without `zero_init = true` leaves stale "dirty" memory readable as valid data. [SSB-ANC-8]
+
+```rust
+// VULNERABLE: stale bytes readable after resize
+#[account(mut, realloc = new_size, realloc::payer = user)]
+pub data_account: Account<'info, DataAccount>,
+// If account was shrunk then grown: leftover bytes contain old data
+
+// SECURE: Zero new memory
+#[account(
+    mut,
+    realloc = new_size,
+    realloc::payer = user,
+    realloc::zero_init = true,  // Zero new bytes
+)]
+pub data_account: Account<'info, DataAccount>,
+```
+
+#### Pattern SSB6: Token-2022 DoS ⚠️ HIGH
+**Description**: Using legacy `anchor_spl::token::transfer` with a Token-2022 mint causes silent failure or DoS — it hardcodes the legacy Token Program ID. [SSB-ANC-6]
+
+```rust
+// VULNERABLE: Legacy-only transfer
+use anchor_spl::token;
+token::transfer(
+    CpiContext::new(ctx.accounts.token_program.to_account_info(), transfer_accounts),
+    amount,
+)?;
+// Fails silently or panics on Token-2022 mints!
+
+// SECURE: Interface-aware transfer
+use anchor_spl::token_interface::{self, TransferChecked};
+token_interface::transfer_checked(
+    CpiContext::new(
+        ctx.accounts.token_program.to_account_info(),
+        TransferChecked {
+            from: ctx.accounts.from_ata.to_account_info(),
+            mint: ctx.accounts.mint.to_account_info(),
+            to: ctx.accounts.to_ata.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        },
+    ),
+    amount,
+    ctx.accounts.mint.decimals,
+)?;
+```
+
+#### Pattern SSB7: Global Vault Blast Radius ⚠️ HIGH
+**Description**: A single global vault PDA for all users means a CPI exploit drains everyone's funds. User-specific PDAs limit blast radius. [SSB-CPI-8]
+
+```rust
+// VULNERABLE: Global vault — attacker drains all funds
+#[account(
+    mut,
+    seeds = [b"vault"],  // One vault for ALL users!
+    bump = vault.bump,
+)]
+pub vault: Account<'info, Vault>,
+
+// SECURE: Per-user vault — attacker drains only their own
+#[account(
+    mut,
+    seeds = [b"vault", user.key().as_ref()],  // Isolated per user
+    bump = vault.bump,
+)]
+pub vault: Account<'info, UserVault>,
+```
+
+#### Pattern SSB8: remaining_accounts Without Validation ⚠️ HIGH
+**Description**: `ctx.remaining_accounts` is the easiest place to inject malicious accounts — developers assume they're already validated, but they receive zero automatic checks. [shared-base §9.3]
+
+```rust
+// VULNERABLE: No validation on remaining_accounts
+for account in ctx.remaining_accounts.iter() {
+    let data = account.try_borrow_data()?;
+    process_data(&data);  // Trusting unvalidated data!
+}
+
+// SECURE: Full validation on each remaining account
+for account in ctx.remaining_accounts.iter() {
+    require_keys_eq!(*account.owner, crate::ID, ErrorCode::InvalidOwner);
+    require!(account.is_writable, ErrorCode::NotWritable);
+    let data = account.try_borrow_data()?;
+    require!(data[0] == EXPECTED_DISCRIMINATOR, ErrorCode::InvalidType);
+    process_data(&data);
+}
+```
+
+---
+
 ### **Substrate-Specific Detection Patterns**
 
 #### Pattern SUB1: Arithmetic Overflow ⚠️ CRITICAL
@@ -2146,6 +2485,21 @@ fn verify_mac_ct(expected: &[u8], actual: &[u8]) -> bool {
 - [ ] Accounts reloaded after CPI before reuse
 - [ ] No insecure randomness sources in security-critical paths
 - [ ] Instruction introspection uses relative indexing
+
+## Solana Safe Builder Completion Checklist (Frank Castle / SSB):
+- [ ] Program risk level assessed (🟢/🟡/🔴) with justification
+- [ ] Curiosity Principle applied: 6 adversarial questions on every account input
+- [ ] Signer pass-through sanitized in all CPI calls (SSB-CPI-3)
+- [ ] SOL balance verified before/after CPI (SSB-CPI-4)
+- [ ] Post-CPI account ownership re-verified (SSB-CPI-5)
+- [ ] No `init_if_needed` without explicit reinitialization guard (SSB-ANC-2)
+- [ ] No `realloc` without `zero_init = true` (SSB-ANC-8)
+- [ ] Token-2022 compatible: `transfer_checked` + `InterfaceAccount` + `Interface` (SSB-ANC-6)
+- [ ] Duplicate mutable accounts constrained `key() !=` for every pair (SSB)
+- [ ] `remaining_accounts` validated with same rigor as named accounts (SSB)
+- [ ] Global vault PDAs assessed for blast radius — per-user PDAs preferred (SSB-CPI-8)
+- [ ] Native Rust: 6-step validation sequence applied to every account (SSB)
+- [ ] All `UncheckedAccount` fields have substantive `/// CHECK:` comments (SSB-ANC-1)
 
 ## General Rust Safety Completion Checklist (Awesome-Rust-Checker):
 - [ ] All `unsafe impl Send/Sync` for generics checked for bound correctness (Rudra)

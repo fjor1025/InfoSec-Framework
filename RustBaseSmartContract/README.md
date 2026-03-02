@@ -117,6 +117,17 @@ cd /path/to/rust-contract
 - x-ray SVE (Solana Vulnerability Enumeration) coverage
 - OWASP Solana Programs Top 10 mapping
 
+### Solana Safe Builder (Frank Castle / SSB)
+Builder-side secure coding patterns from 70+ Rust audits and 250+ Critical/High findings:
+- **Risk Assessment** — classify every program as 🟢 Low / 🟡 Medium / 🔴 Critical before auditing
+- **Account & Identity Validation** — 6 mandatory checks (signer, ownership, data matching, type cosplay, reinitialization, writable)
+- **CPI Safety Surface** — SSB-CPI-1 through SSB-CPI-8 (validate program IDs, reload stale data, signer pass-through, SOL balance checks, post-CPI ownership, error propagation, invoke vs invoke_signed, blast radius)
+- **Anchor-Specific Pitfalls** — SSB-ANC-1 through SSB-ANC-9 (UncheckedAccount CHECK, init_if_needed, has_one, seeds+bump, realloc+zero_init, transfer_checked, reload(), access_control, close)
+- **Native Rust 6-Step Validation** — key → owner → signer → writable → discriminator → data
+- **Token-2022 Compatibility** — enforce `transfer_checked` over legacy `token::transfer`
+- **Curiosity Principle** — 6 adversarial questions for every account input
+- Detection patterns: SSB1–SSB8 (see Rust-Smartcontract-workflow.md Step 6.7)
+
 ### Substrate
 - Extrinsic weight calculation
 - Storage migrations
@@ -191,6 +202,15 @@ for x in vec.iter() { x.clone() }  // → use references
 ### Substrate
 - **Acala (2022)**: aUSD mint misconfiguration
 - **Moonbeam**: XCM validation issues
+
+### Solana (Frank Castle / SSB Reference Exploits)
+- **Wormhole-class**: CPI signer pass-through — attacker account forwarded as signer [SSB-CPI-3]
+- **Cashio-class**: Missing account ownership + reinitialization guard [SSB-ANC-2]
+- **SOL balance drain**: CPI to system_program::transfer drains excess lamports [SSB-CPI-4]
+- **Post-CPI ownership change**: `assign()` after CPI changes account owner [SSB-CPI-5]
+- **Token-2022 DoS**: Legacy `token::transfer` fails on Token-2022 mints [SSB-ANC-6]
+- **Global vault blast radius**: Single PDA vault for all users, one exploit drains all [SSB-CPI-8]
+- See: [safe-solana-builder](https://github.com/FrankCastle-0x/safe-solana-builder)
 
 ### General Rust (Rudra CVEs)
 - **76 CVEs discovered** across the Rust ecosystem via Send/Sync variance analysis
@@ -272,6 +292,17 @@ x-ray scan --target programs/ --output report.json
 Cross-referenced throughout the framework:
 1. Integer Overflow | 2. Missing Account Verification | 3. Missing Signer Check |
 4. Arithmetic Accuracy | 5. Arbitrary CPI | 6. Account Confusion | 7. Error Not Handled
+
+### Safe Solana Builder (Frank Castle — secure coding patterns)
+Knowledge base from 70+ Rust audits distilled into SSB detection patterns.
+Covers CPI safety, account validation, Token-2022 compatibility, Anchor pitfalls,
+native Rust validation sequences, and adversarial "Curiosity Principle" reasoning.
+
+```
+Patterns: SSB1–SSB8 (integrated into Rust-Smartcontract-workflow.md Step 6.7)
+Source:   https://github.com/FrankCastle-0x/safe-solana-builder
+Usage:    Manual audit checklist — apply SSB patterns during hypothesis generation
+```
 
 ### Awesome-Rust-Checker (General Rust Safety, 5 tools)
 Academic and industry static analyzers for general Rust safety — applicable to all Rust codebases:
@@ -357,7 +388,15 @@ echo "=== LOCK PATTERNS ==="   && grep -rn "Mutex::new\|RwLock::new\|\.lock()\|\
 echo "=== ATOMICS ==="         && grep -rn "AtomicUsize\|AtomicBool\|Ordering::" src/ | grep -v test
 echo "=== PTR_READ ==="        && grep -rn "ptr::read\|ptr::write\|from_raw_parts\|set_len\|transmute" src/
 echo "=== DROP IMPLS ==="      && grep -rn "impl.*Drop.*for\|fn drop(" src/
-```
+# Safe Solana Builder (SSB) danger map
+echo "=== DUPLICATE MUTABLE ==="  && grep -rn "Account<.*>.*Account<" src/ | grep -v test
+echo "=== INIT_IF_NEEDED ==="    && grep -rn "init_if_needed" src/
+echo "=== LEGACY TRANSFER ==="   && grep -rn "token::transfer\b" src/ | grep -v "transfer_checked"
+echo "=== REMAINING_ACCTS ==="   && grep -rn "remaining_accounts" src/ | grep -v test
+echo "=== GLOBAL VAULT PDA ==="  && grep -rn "seeds.*=.*b\"vault\"\|seeds.*=.*b\"pool\"" src/
+echo "=== REALLOC ==="           && grep -rn "realloc" src/ | grep -v "zero_init"
+echo "=== UNCHECKED_ACCT ==="    && grep -rn "UncheckedAccount" src/
+echo "=== CPI SIGNERS ==="      && grep -rn "invoke_signed\|CpiContext::new_with_signer" src/```
 
 ---
 
@@ -367,7 +406,7 @@ This framework is provided for educational and professional use in smart contrac
 
 ---
 
-**Framework Version:** 3.1  
+**Framework Version:** 3.2  
 **Last Updated:** March 2026  
 **Target Ecosystems:** CosmWasm, Solana/Anchor, Substrate, General Rust  
-**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 AST analyzers), x-ray SVE detection, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI)
+**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 AST analyzers), x-ray SVE detection, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI), Safe Solana Builder (Frank Castle — SSB patterns)

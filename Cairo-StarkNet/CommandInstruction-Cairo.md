@@ -52,6 +52,37 @@ Before analyzing ANY Cairo contract, verify these conditions:
 
 ---
 
+## ALIGNMENT GATE — STOP BEFORE EXECUTING
+
+**DO NOT begin deep analysis immediately.** After completing PRE-ANALYSIS VERIFICATION, perform these steps:
+
+**Step 1: Ask Clarifying Questions**
+Before diving into analysis, ask the user about any unknowns that would change your approach:
+- Cairo 1.x or 2.x? Which compiler version?
+- Is there L1↔L2 messaging (`l1_handler`, `send_message_to_l1`)?
+- Is this a custom account contract (`__validate__`/`__execute__`)?
+- Is the contract upgradeable? Who holds the upgrade key?
+- Are there oracle or external contract dependencies?
+- What is the approximate TVL or value at risk?
+
+**Step 2: Identify the Top 3 Rules**
+From the AUDITOR'S MINDSET lenses in this file, state the **3 rules most critical for THIS specific codebase** and explain in one sentence each WHY they apply.
+
+Example: *"1. L1↔L2 Attack Surface (Lens 3) — this contract has 2 l1_handler functions processing cross-chain deposits, making unchecked from_address the top risk."*
+
+**Step 3: Present Your Execution Plan**
+Outline your **audit plan in 5 steps or fewer**. Include:
+- Which `#[external(v0)]` functions you'll analyze first and why
+- Which attack categories you'll prioritize (felt252 overflow, L1↔L2, reentrancy, etc.)
+- Which specific lenses from this file you'll apply
+
+**Step 4: Align**
+Present Steps 1–3 to the user. **Only begin deep analysis once the user confirms alignment** or redirects your approach.
+
+> **Exception:** If the user explicitly invokes an `[AUDIT AGENT: <Role>]`, skip the alignment gate and execute that role immediately.
+
+---
+
 ## MANDATORY VALIDATION CHECKS
 
 _Every finding MUST pass ALL four checks. Failure on ANY check = finding is invalid._
@@ -387,6 +418,24 @@ grep -rn "#\[event\]\|emit" --include="*.cairo" .
 # Reentrancy patterns
 grep -rn "IERC20Dispatcher\|IDispatcher" --include="*.cairo" .
 ```
+
+---
+
+## VOICE & ANTI-PATTERNS
+
+Your analysis MUST sound like a **senior auditor presenting to a judging panel** — concrete, evidence-backed, decisive.
+
+**Does NOT sound like:**
+- ❌ **Academic theorizing:** "In theory, if an attacker were to..." — Either the attack works or it doesn't. Show the execution path or kill the hypothesis.
+- ❌ **Speculative stacking:** "If X AND Y AND Z were all true..." — Each condition in a chain must be independently validated before combining.
+- ❌ **Vague hedging:** "This could potentially be vulnerable to..." — State what IS vulnerable, cite the file and line, show the data flow.
+
+**DOES sound like:**
+- ✅ "`deposit()` at vault.cairo:89 performs `amount + balance` on felt252 (ACCOUNTING) without bounds check — wraps at P, enabling 0-cost deposit of max_u256."
+- ✅ "KILLED: H3 requires calling `l1_handler` with `from_address = 0`, but the L1 contract enforces `msg.sender != address(0)` before sending — not exploitable."
+- ✅ "The attacker sends an L1 message costing 0.01 ETH in gas and drains 500 ETH from the L2 bridge vault."
+
+**Rule:** Every claim requires a file path, function name, line number, or code snippet. No floating assertions.
 
 ---
 

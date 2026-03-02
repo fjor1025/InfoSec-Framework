@@ -318,6 +318,16 @@ Constraints:
   - PDA exploitation (non-canonical bump, seed collision, PDA sharing)
   - Stale data after CPI (missing .reload()) [SF-10]
   - Type cosplay (same-layout struct confusion) [SVE-1010]
+- Include Safe Solana Builder attack vectors (Frank Castle / SSB):
+  - Duplicate mutable account: same account for two roles → free money [SSB]
+  - CPI signer pass-through: unintended signer authority leaked [SSB-CPI-3]
+  - SOL balance drain via CPI: callee spends excess SOL [SSB-CPI-4]
+  - Post-CPI ownership change: attacker calls assign() during CPI [SSB-CPI-5]
+  - init_if_needed hijack: pre-created account with attacker authority [SSB-ANC-2]
+  - Token-2022 DoS: legacy transfer fails on Token-2022 mints [SSB-ANC-6]
+  - Global vault blast radius: single PDA → exploit drains all users [SSB-CPI-8]
+  - remaining_accounts injection: zero validation on injected accounts [SSB]
+  - realloc dirty memory: stale data readable after shrink→grow [SSB-ANC-8]
   - Account reinitialization after improper close [SF-06]
   - Instruction introspection manipulation [SF-11]
   - Insecure randomness [SF-13]
@@ -1179,6 +1189,71 @@ PDA MAP:
 Red flags to escalate to Working Chat.
 ```
 
+### SCAN Solana Safe Builder (Frank Castle / SSB patterns)
+```text
+Context:
+Deep scan using Safe Solana Builder rules drawn from real audit findings.
+Covers CPI edge cases, Token-2022 compatibility, account lifecycle,
+duplicate mutable accounts, and the Curiosity Principle adversarial mindset.
+Complements the Account Validation and CPI/PDA SCANs above.
+
+Goal:
+Identify safe-solana-builder (SSB) pattern violations that automated tools miss.
+
+PART A — RISK ASSESSMENT:
+1. Classify program risk: 🟢 Low / 🟡 Medium / 🔴 Critical
+   - 🔴 = vaults, AMM, lending, bridges, multi-CPI, admin keys, large TVL
+   - Flag every admin key, upgrade authority, irreversible state transition
+
+PART B — CURIOSITY PRINCIPLE (ask for every account input):
+2. What happens if the same account is passed for two different roles?
+3. What happens if this account is owned by a different program?
+4. What happens if this is a Token-2022 mint instead of legacy?
+5. What happens if the CPI returns success but didn't actually execute?
+6. What happens if the program ID passed is a malicious lookalike?
+7. What happens if this PDA bump is not canonical?
+
+PART C — CPI SAFETY SURFACE (beyond basic program ID check):
+8. Are signer privileges sanitized before CPI? (only needed signers passed) [SSB-CPI-3]
+9. Is signer SOL balance verified before and after CPI? [SSB-CPI-4]
+10. Is account ownership re-verified after CPI? (attacker can `assign`) [SSB-CPI-5]
+11. Are CPI errors propagated (`?`)? Could callee return success without acting? [SSB-CPI-6]
+12. Is invoke_signed used only when PDA must sign? No non-signer elevation? [SSB-CPI-7]
+
+PART D — TOKEN-2022 COMPATIBILITY:
+13. Does any code use legacy `token::transfer` (not `transfer_checked`)? [SSB-ANC-6]
+14. Are account types using `InterfaceAccount` (not `Account<TokenAccount>`)? [SSB-ANC-6]
+15. Is token program type `Interface<TokenInterface>` (not `Program<Token>`)? [SSB-ANC-6]
+16. Are Token-2022 features (transfer hooks, confidential) flagged for review?
+
+PART E — ANCHOR-SPECIFIC PITFALLS:
+17. Any `init_if_needed` without reinitialization guard on existing state? [SSB-ANC-2]
+18. Any `realloc` without `zero_init = true`? [SSB-ANC-8]
+19. Any `UncheckedAccount` without substantive `/// CHECK:` comment? [SSB-ANC-1]
+20. Cross-account relationships enforced via `has_one` (not manual compare)? [SSB-ANC-3]
+21. Account closing via `close = recipient` (not manual lamport drain)? [SSB-ANC-4]
+
+PART F — BLAST RADIUS & LIFECYCLE:
+22. Is there a global vault PDA? → per-user PDAs preferred [SSB-CPI-8]
+23. Are remaining_accounts validated with same rigor as named accounts? [SSB]
+24. Account close: zero data + drain lamports + assign System Program (all 3 steps)?
+25. Close recipient: trusted address or arbitrary user-supplied?
+26. New accounts funded with rent.minimum_balance(size) (not hardcoded)?
+
+PART G — NATIVE RUST (if non-Anchor):
+27. 6-step validation sequence: key→owner→signer→writable→discriminator→data?
+28. try_from_slice for deserialization (not raw byte casting / transmute)?
+29. data_len >= T::LEN verified before deserialization?
+30. No unwrap()/expect() in instruction handlers?
+
+Output per finding:
+- SSB pattern ID (SSB-CPI-N or SSB-ANC-N)
+- Location (file, function, line)
+- Severity (Critical/High/Medium/Low)
+- Recommended fix
+- Curiosity Principle question that exposes it
+```
+
 ### SCAN General Rust Safety (Awesome-Rust-Checker patterns)
 ```text
 Context:
@@ -1285,6 +1360,18 @@ Solana-specific focus areas (if applicable):
 - Division-before-multiplication patterns in token/fee calculations
 - Clock/slot usage in security-critical randomness
 - Instruction introspection with hardcoded absolute indexes
+
+Solana Safe Builder focus areas (Frank Castle / SSB):
+- CPI passing all remaining_accounts including unintended signers [SSB-CPI-3]
+- No SOL balance check before/after CPI — excess spend undetected [SSB-CPI-4]
+- Account ownership not re-verified after CPI — attacker can assign() [SSB-CPI-5]
+- `init_if_needed` accepting pre-created accounts with attacker state [SSB-ANC-2]
+- `realloc` without `zero_init = true` — stale memory after shrink→grow [SSB-ANC-8]
+- Legacy `token::transfer` instead of `transfer_checked` — Token-2022 DoS [SSB-ANC-6]
+- Global vault PDA for all users — one exploit drains everyone [SSB-CPI-8]
+- `remaining_accounts` iterated without ownership/signer/type checks [SSB]
+- `UncheckedAccount` without substantive `/// CHECK:` explanation [SSB-ANC-1]
+- Apply Curiosity Principle: for every account, ask the 6 adversarial questions
 
 General Rust safety focus areas (all targets):
 - `unsafe impl Send/Sync` for generic types without proper trait bounds
@@ -1418,7 +1505,7 @@ for x in vec  → add limits
 
 ---
 
-**Framework Version:** 3.1
+**Framework Version:** 3.2
 **Last Updated:** March 2026
 **Target Ecosystems:** CosmWasm, Solana/Anchor, Substrate, General Rust
-**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 analyzers), x-ray SVE IDs, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI)
+**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 analyzers), x-ray SVE IDs, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI), Safe Solana Builder (Frank Castle — SSB patterns)

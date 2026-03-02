@@ -60,6 +60,35 @@ When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 - "[ ] Arithmetic safety verified (checked_*/saturating_* usage)" [Rust-Smartcontract-workflow.md, Phase 4 Pass 3]
 - "[ ] Dependencies reviewed (Cargo.toml)" [Rust-Smartcontract-workflow.md, Step 1.2]
 
+### ALIGNMENT GATE — STOP BEFORE EXECUTING
+
+**DO NOT begin deep analysis immediately.** After completing PRE-ANALYSIS VERIFICATION, perform these steps:
+
+**Step 1: Ask Clarifying Questions**
+Before diving into analysis, ask the user about any unknowns that would change your approach:
+- Is this Anchor, native Solana, CosmWasm, Substrate, or standalone Rust?
+- What is the approximate TVL or value at risk? (🟢 ≤$100K / 🟡 $100K–$10M / 🔴 >$10M)
+- Are there CPI calls, IBC messages, or cross-contract invocations?
+- Is the program/contract upgradeable? If so, who holds the upgrade authority?
+- Are there oracle dependencies or external price feeds?
+- What framework version (Anchor, CosmWasm, Substrate pallet crate)?
+
+**Step 2: Identify the Top 3 Rules**
+From the AUDITOR'S MINDSET and analysis requirements in this file, state the **3 rules most critical for THIS specific codebase** and explain in one sentence each WHY they apply.
+
+Example: *"1. CPI Safety (SSB-CPI-3/4/5) — this program makes 4 CPI calls including to a user-supplied program ID, making signer pass-through and post-CPI ownership the top risk."*
+
+**Step 3: Present Your Execution Plan**
+Outline your **audit plan in 5 steps or fewer**. Include:
+- Which entry points you'll analyze first and why
+- Which attack categories you'll prioritize (based on the codebase characteristics)
+- Which specific checks from this file you'll apply
+
+**Step 4: Align**
+Present Steps 1–3 to the user. **Only begin deep analysis once the user confirms alignment** or redirects your approach.
+
+> **Exception:** If the user explicitly invokes an `[AUDIT AGENT: <Role>]`, skip the alignment gate and execute that role immediately.
+
 ### MANDATORY VALIDATION CHECKS FOR EACH FINDING
 For any potential issue identified, you **MUST** formally validate it by answering:
 
@@ -160,6 +189,22 @@ Reference IDs: **SVE** = sec3 x-ray enumeration, **SF** = solana-fender analyzer
 - Are loop `break` vs `continue` semantics correct? (jet-v1 pattern: SVE-2001)
 - Are CPI errors properly handled (logged, state rolled back)? (OWASP #7)
 
+**5i. Safe Solana Builder Patterns (Frank Castle / SSB)**
+Additional checks from real audit findings — apply to ALL Solana programs:
+- Is program risk assessed (🟢/🟡/🔴)? 🔴 Critical = vaults/AMM/bridges/multi-CPI — require threat model
+- Is every pair of mutable accounts constrained `key() !=`? (duplicate mutable account attack) [SSB]
+- Are CPI signer privileges sanitized? (only needed accounts passed, `!is_signer` on rest) [SSB-CPI-3]
+- Is signer SOL balance verified before/after CPI? (no excess spend) [SSB-CPI-4]
+- Is account ownership re-verified after CPI? (attacker can `assign` during CPI) [SSB-CPI-5]
+- Does the program use `init_if_needed`? If so, is existing state validated? [SSB-ANC-2]
+- Does `realloc` use `zero_init = true`? (stale dirty memory after shrink→grow) [SSB-ANC-8]
+- Is Token-2022 compatible? (`transfer_checked` + `InterfaceAccount` + `Interface`) [SSB-ANC-6]
+- Are `remaining_accounts` validated with full rigor? (ownership, signer, type) [SSB]
+- Is there a global vault PDA? → prefer per-user PDAs for blast radius isolation [SSB-CPI-8]
+- (Native Rust) Does every account pass the 6-step validation: key→owner→signer→writable→discriminator→data? [SSB]
+- Do all `UncheckedAccount` fields have substantive `/// CHECK:` comments? [SSB-ANC-1]
+- Curiosity Principle: For every account input, ask: same-account-twice? different-owner? Token-2022? silent-CPI? malicious-program-ID? non-canonical-bump? [SSB]
+
 ### GENERAL RUST SAFETY ANALYSIS (Awesome-Rust-Checker)
 When the codebase uses `unsafe`, raw pointers, concurrency primitives, FFI, or `ManuallyDrop`, also check:
 
@@ -208,6 +253,17 @@ Reference these when generating hypotheses:
 - Raydium (2022): Insufficient account validation in AMM swap path [SVE-1007/1019]
 - Nirvana Finance (2022): Flash loan → fake collateral → unchecked mint [SVE-1002]
 - Slope Wallet (2022): Private key exposure via Sentry logging (supply-chain)
+
+**Solana (Safe Solana Builder patterns — Frank Castle):**
+- Duplicate mutable account: Same account passed for source+destination → free transfer to self [SSB]
+- CPI signer pass-through: Unintended signer authority leaked to attacker-controlled program [SSB-CPI-3]
+- SOL balance drain: Callee spends excess SOL from signing account during CPI [SSB-CPI-4]
+- Post-CPI ownership change: Attacker's program calls `assign` → account now under attacker control [SSB-CPI-5]
+- init_if_needed hijack: Pre-created account with attacker's authority accepted without validation [SSB-ANC-2]
+- Token-2022 DoS: Legacy `token::transfer` fails on Token-2022 mints [SSB-ANC-6]
+- Global vault blast radius: Single vault PDA → exploit drains all users [SSB-CPI-8]
+- remaining_accounts injection: Zero validation on `ctx.remaining_accounts` → malicious accounts processed [SSB]
+- realloc dirty memory: Account shrink→grow without `zero_init` → stale data readable [SSB-ANC-8]
 
 **Substrate:**
 - Acala (2022): aUSD mint bug via misconfigured honzon
@@ -349,6 +405,40 @@ let v: Vec<i32> = unsafe { MaybeUninit::uninit().assume_init() };
 // 22. Secret-dependent branch (General Rust) — [MIRAI: RUST10]
 if expected[i] != actual[i] { return false; }  // Timing leak!
 // → use constant-time comparison (subtle::ct_eq)
+
+// 23. Duplicate mutable account (Solana) — [SSB]
+pub source: Account<'info, Vault>,  // No key() != constraint!
+pub destination: Account<'info, Vault>,  // Same account → free transfer to self
+// → constraint = source.key() != destination.key()
+
+// 24. Signer pass-through in CPI (Solana) — [SSB-CPI-3]
+invoke(&ix, &ctx.remaining_accounts.to_vec())?;  // ALL signers passed!
+// → Only pass needed accounts; verify !is_signer on non-essential ones
+
+// 25. SOL balance drain via CPI (Solana) — [SSB-CPI-4]
+token::transfer(cpi_ctx, amount)?;  // No balance check!
+// → Record lamports() before CPI, verify after CPI
+
+// 26. Post-CPI ownership change (Solana) — [SSB-CPI-5]
+invoke(&ix, &accounts)?;  // Attacker can assign() during CPI!
+let data = vault.try_borrow_data()?;  // Reading attacker-controlled data
+// → require_keys_eq!(*vault.owner, crate::ID) after CPI
+
+// 27. init_if_needed without guard (Solana) — [SSB-ANC-2]
+#[account(init_if_needed)]  // Pre-created account with malicious state accepted!
+// → if config.initialized { require_keys_eq!(config.authority, user.key()) }
+
+// 28. Legacy token transfer (Solana) — [SSB-ANC-6]
+token::transfer(cpi_ctx, amount)?;  // DoS on Token-2022 mints!
+// → token_interface::transfer_checked with InterfaceAccount + Interface
+
+// 29. Global vault blast radius (Solana) — [SSB-CPI-8]
+seeds = [b"vault"]  // ALL user funds in one PDA!
+// → seeds = [b"vault", user.key().as_ref()] for per-user isolation
+
+// 30. remaining_accounts unvalidated (Solana) — [SSB]
+for acc in ctx.remaining_accounts { process(acc); }  // Zero validation!
+// → Check owner, signer, writable, discriminator on every remaining_account
 ```
 
 ### SOLANA TOOLING INTEGRATION
@@ -407,6 +497,22 @@ grep -rn "AtomicBool\|AtomicU\|AtomicI" src/ | grep -v test
 
 **Treat automated findings as signals — manually validate every result before reporting.**
 
+### VOICE & ANTI-PATTERNS
+
+Your analysis MUST sound like a **senior auditor presenting to a judging panel** — concrete, evidence-backed, decisive.
+
+**Does NOT sound like:**
+- ❌ **Academic theorizing:** "In theory, if an attacker were to..." — Either the attack works or it doesn't. Show the execution path or kill the hypothesis.
+- ❌ **Speculative stacking:** "If X AND Y AND Z were all true..." — Each condition in a chain must be independently validated before combining.
+- ❌ **Vague hedging:** "This could potentially be vulnerable to..." — State what IS vulnerable, cite the file and line, show the data flow.
+
+**DOES sound like:**
+- ✅ "`withdraw()` at src/vault.rs:142 reads `vault.amount` (SNAPSHOT) then calls `token::transfer` (CPI) before decrementing `vault.amount` (MUTATION) — stale data after CPI per SSB-CPI-3."
+- ✅ "KILLED: H3 requires `authority` to equal `attacker.key()`, but `has_one = authority` constraint at L89 binds it to the stored config — not exploitable."
+- ✅ "The attack costs 0.01 SOL in compute fees and yields 50,000 USDC from the global vault — economically viable at any scale."
+
+**Rule:** Every claim requires a file path, line number, or code snippet. No floating assertions.
+
 ### OUTPUT & REPORTING STANDARDS
 - 🚫 **NO False Positives:** You MUST NOT report hypotheticals, unvalidated guesses, or "potential" issues that fail the validation checks above.
 - ✅ **For Every *Confirmed* Finding:** Generate a **separate, dedicated markdown report file.**
@@ -446,7 +552,7 @@ grep -rn "AtomicBool\|AtomicU\|AtomicI" src/ | grep -v test
 
 ## Framework-Specific Category
 - [ ] CosmWasm: IBC / Reply / Submessage / Migrate / Denom
-- [ ] Solana: CPI [SVE-1016] / PDA [SVE-1014/1015] / Signer [SVE-1001] / Ownership [SVE-1002] / Sysvar / Account Lifecycle [SF-06/09] / Type Cosplay [SVE-1010] / Instruction Introspection [SF-11] / Randomness [SF-13] / Account Reloading [SF-10]
+- [ ] Solana: CPI [SVE-1016] / PDA [SVE-1014/1015] / Signer [SVE-1001] / Ownership [SVE-1002] / Sysvar / Account Lifecycle [SF-06/09] / Type Cosplay [SVE-1010] / Instruction Introspection [SF-11] / Randomness [SF-13] / Account Reloading [SF-10] / Duplicate Mutable [SSB] / Signer Pass-Through [SSB-CPI-3] / SOL Drain [SSB-CPI-4] / Post-CPI Ownership [SSB-CPI-5] / init_if_needed [SSB-ANC-2] / Token-2022 [SSB-ANC-6] / Global Vault [SSB-CPI-8] / remaining_accounts [SSB] / realloc [SSB-ANC-8]
 - [ ] Substrate: Weight / Origin / Storage Migration / Unsigned Tx
 - [ ] General Rust: Send/Sync [Rudra] / Deadlock [lockbud] / UAF [lockbud/RAPx] / Leak [rCanary] / Taint [MIRAI] / Timing [MIRAI]
 
@@ -501,6 +607,7 @@ fn test_exploit() {
 - x-ray SVE: [if applicable — e.g., "SVE-1016: ArbitraryCPI"]
 - OWASP Solana Top 10: [if applicable — e.g., "OWASP #5: Arbitrary Signed Program Invocation"]
 - Awesome-Rust-Checker: [if applicable — e.g., "Rudra RUST1: Unsound Send/Sync", "lockbud RUST3: DoubleLock", "RAPx SafeDrop", "rCanary leak", "MIRAI taint"]
+- Safe Solana Builder: [if applicable — e.g., "SSB-CPI-3: Signer Pass-Through", "SSB-ANC-2: init_if_needed", "SSB-ANC-6: Token-2022"]
 ```
 
 ### SEVERITY CLASSIFICATION (Rust)
@@ -591,6 +698,15 @@ echo "=== PDA ISSUES ===" && grep -c "create_program_address" src/*.rs 2>/dev/nu
 echo "=== TYPE COSPLAY ===" && grep -c "try_from_slice" src/*.rs 2>/dev/null
 echo "=== PRECISION LOSS ===" && grep -c "checked_div.*checked_mul" src/*.rs 2>/dev/null
 echo "=== INSECURE RANDOM ===" && grep -c "unix_timestamp\|SlotHashes" src/*.rs 2>/dev/null
+
+# SSB: Safe Solana Builder danger map (Frank Castle)
+echo "=== DUPLICATE MUTABLE ===" && grep -rn "Account<'info" src/ | grep mut | sort | uniq -c | sort -rn | head -10
+echo "=== INIT_IF_NEEDED ===" && grep -rn "init_if_needed" src/ | grep -v test
+echo "=== LEGACY TOKEN TRANSFER ===" && grep -rn "token::transfer" src/ | grep -v "transfer_checked\|test"
+echo "=== REMAINING_ACCOUNTS ===" && grep -rn "remaining_accounts" src/ | grep -v test
+echo "=== GLOBAL VAULT PDA ===" && grep -rn "seeds = \[b" src/ | grep -v "key()\|as_ref()" | head -10
+echo "=== REALLOC ===" && grep -rn "realloc" src/ | grep -v "zero_init\|test"
+echo "=== UNCHECKED_ACCOUNT ===" && grep -rn "UncheckedAccount" src/ | grep -v "CHECK:\|test"
 ```
 
 ### General Rust Safety Quick Audit Commands (Awesome-Rust-Checker)

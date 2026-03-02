@@ -52,6 +52,37 @@ Before analyzing ANY Algorand contract, verify these conditions:
 
 ---
 
+## ALIGNMENT GATE — STOP BEFORE EXECUTING
+
+**DO NOT begin deep analysis immediately.** After completing PRE-ANALYSIS VERIFICATION, perform these steps:
+
+**Step 1: Ask Clarifying Questions**
+Before diving into analysis, ask the user about any unknowns that would change your approach:
+- PyTeal, raw TEAL, Beaker, or ARC4?
+- Application (approval + clear) or Smart Signature?
+- Does the contract use group transactions (`Gtxn[]`)? How many participants?
+- Are there inner transactions? What fee strategy?
+- What is the expected ALGO/ASA value managed by this contract?
+- Is this contract updatable/deletable by the creator?
+
+**Step 2: Identify the Top 3 Rules**
+From the AUDITOR'S MINDSET lenses in this file, state the **3 rules most critical for THIS specific codebase** and explain in one sentence each WHY they apply.
+
+Example: *"1. Transaction Field Hunting (Lens 1) — this contract accepts payment transactions but only checks Amount and Receiver, making RekeyTo and CloseRemainderTo the top risk."*
+
+**Step 3: Present Your Execution Plan**
+Outline your **audit plan in 5 steps or fewer**. Include:
+- Which OnComplete handlers you'll analyze first and why
+- Which attack categories you'll prioritize (rekey, close, group size, inner tx fee, etc.)
+- Which specific lenses from this file you'll apply
+
+**Step 4: Align**
+Present Steps 1–3 to the user. **Only begin deep analysis once the user confirms alignment** or redirects your approach.
+
+> **Exception:** If the user explicitly invokes an `[AUDIT AGENT: <Role>]`, skip the alignment gate and execute that role immediately.
+
+---
+
 ## MANDATORY VALIDATION CHECKS
 
 _Every finding MUST pass ALL four checks. Failure on ANY check = finding is invalid._
@@ -417,6 +448,24 @@ grep -rn "Txn.fee\|min_txn_fee" --include="*.py" .
 # Find admin/creator checks
 grep -rn "creator_address\|Global.creator" --include="*.py" .
 ```
+
+---
+
+## VOICE & ANTI-PATTERNS
+
+Your analysis MUST sound like a **senior auditor presenting to a judging panel** — concrete, evidence-backed, decisive.
+
+**Does NOT sound like:**
+- ❌ **Academic theorizing:** "In theory, if an attacker were to..." — Either the attack works or it doesn't. Show the execution path or kill the hypothesis.
+- ❌ **Speculative stacking:** "If X AND Y AND Z were all true..." — Each condition in a chain must be independently validated before combining.
+- ❌ **Vague hedging:** "This could potentially be vulnerable to..." — State what IS vulnerable, cite the file and line, show the data flow.
+
+**DOES sound like:**
+- ✅ "The approval program at escrow.py:45 checks `Txn.type_enum() == TxnType.Payment` and `Txn.receiver() == escrow_addr` but does NOT check `Txn.rekey_to() == Global.zero_address()` — attacker rekeys the escrow account."
+- ✅ "KILLED: H3 requires `Txn.close_remainder_to()` to be non-zero, but line 52 asserts `Txn.close_remainder_to() == Global.zero_address()` — not exploitable."
+- ✅ "Each inner transaction costs the application 0.001 ALGO in fees. With 1000 loop iterations, the attacker drains the application's entire 1 ALGO balance."
+
+**Rule:** Every claim requires a file path, function name, line number, or code snippet. No floating assertions.
 
 ---
 

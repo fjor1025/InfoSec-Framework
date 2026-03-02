@@ -87,7 +87,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 | Framework | Lines | Sections | ClaudeSkills Patterns | Ecosystem Lenses |
 |-----------|-------|----------|----------------------|-----------------|
 | **Solidity/EVM** | ~3,912 | 1–10 | Benchmark + QuillAudits V1 + evmresearch.io | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline, specification completeness, compiler trust boundary, account abstraction awareness |
-| **Rust** | ~3,200+ | 1–10 | Solana + Substrate + Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI) | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic, Send/Sync soundness, concurrency, memory safety, verification |
+| **Rust** | ~3,400+ | 1–10 | Solana + Substrate + Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI) + Safe Solana Builder (Frank Castle, SSB1–SSB8) | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic, Send/Sync soundness, concurrency, memory safety, verification, CPI safety surface, Curiosity Principle |
 | **Go/Cosmos** | ~3,700+ | 1–10 | Cosmos C1–C6 + ABCI++ | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface, ABCI++ lifecycle, tx structure |
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
 | **Cairo/StarkNet** | ~2,703 | 1–10 | Cairo C1–C6 | felt252 thinking, storage hunting, L1↔L2 surface, reentrancy, serialization, access control |
@@ -104,6 +104,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | Cosmos | 741+ lines | Go CommandInstruction + Methodology + Cosmos-SDK | GetSigners, non-determinism, ABCI panic/slow, bookkeeping, ABCI++ lifecycle, module integration, tx structure attacks |
 | Substrate | 792+ lines | Rust CommandInstruction + Methodology | Weights/fees, verify-first, unsigned validation |
 | **Awesome-Rust-Checker** | 5 tools, 10 patterns (RUST1–RUST10) | Rust CommandInstruction + Methodology + Playbook | Rudra (76 CVEs, Send/Sync variance, panic safety, unsafe destructors), lockbud (deadlock, TOCTOU, UAF, invalid free), RAPx (SafeDrop, Senryx, Z3), rCanary (6 leak patterns), MIRAI (taint, constant-time, panic reachability) |
+| **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
 
@@ -180,6 +181,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.0 (SolidityEVM), 3.1 (Rust — Awesome-Rust-Checker), 2.1 (all others)
+**Framework Version:** 3.0 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (all others)
 **Last Updated:** March 2026
 **License:** MIT
