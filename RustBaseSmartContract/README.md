@@ -104,16 +104,32 @@ cd /path/to/rust-contract
 - Storage key management (`cw-storage-plus`)
 
 ### Solana (Anchor)
-- Account validation and constraints
-- PDA derivation and seed management
-- CPI (Cross-Program Invocation) privileges
+- Account validation and constraints (19 solana-fender analyzer patterns)
+- PDA derivation, seed management, and seed collision prevention
+- CPI (Cross-Program Invocation) privileges and program ID validation
 - Rent-exempt balance requirements
+- Account lifecycle (initialization, reinitialization, closing)
+- Type cosplay / account confusion (discriminator validation)
+- Account reloading after CPI (stale data prevention)
+- Instruction introspection (relative vs absolute indexing)
+- Insecure randomness detection
+- Initialization frontrunning prevention
+- x-ray SVE (Solana Vulnerability Enumeration) coverage
+- OWASP Solana Programs Top 10 mapping
 
 ### Substrate
 - Extrinsic weight calculation
 - Storage migrations
 - Pallet interactions and hooks
 - Governance and upgrade paths
+
+### General Rust Safety (Awesome-Rust-Checker)
+Applicable to **all** Rust codebases regardless of blockchain framework:
+- **Unsafe code soundness** — Send/Sync trait bounds, UnsafeDataflow (panic safety), UnsafeDestructor
+- **Concurrency safety** — self-deadlock, lock-order inversion, condvar misuse, atomic TOCTOU
+- **Memory safety** — use-after-free, invalid free, double-free, memory leaks
+- **Verification** — taint analysis, constant-time verification, reachable panics
+- Detection patterns: RUST1–RUST10 (see Rust-Smartcontract-workflow.md Step 6.6)
 
 ---
 
@@ -163,13 +179,24 @@ for x in vec.iter() { x.clone() }  // → use references
 - **Mirror Protocol (2021)**: Oracle staleness
 
 ### Solana
-- **Wormhole (2022)**: Signature verification bypass
-- **Cashio (2022)**: Missing signer validation
-- **Mango Markets (2022)**: Oracle manipulation
+- **Wormhole (2022)**: Signature verification bypass [SVE-1001]
+- **Cashio (2022)**: Missing signer + ownership validation [SVE-1001/1002]
+- **Mango Markets (2022)**: Oracle manipulation + self-liquidation
+- **Jet Protocol v1 (2021)**: Incorrect break vs continue [SVE-2001]
+- **Crema Finance (2022)**: Flash loan + CPI price manipulation [SVE-1016]
+- **spl-token-swap**: Incorrect checked_div vs ceil_div [SVE-2004]
+- **Raydium (2022)**: Insufficient account validation [SVE-1007]
+- **Nirvana Finance (2022)**: Flash loan + unchecked mint [SVE-1002]
 
 ### Substrate
 - **Acala (2022)**: aUSD mint misconfiguration
 - **Moonbeam**: XCM validation issues
+
+### General Rust (Rudra CVEs)
+- **76 CVEs discovered** across the Rust ecosystem via Send/Sync variance analysis
+- **hyper (CVE-2021-32714)**: UnsafeDataflow — panic safety in unsafe code
+- **smallvec, crossbeam, once_cell**: Unsound unsafe impl patterns
+- See: [Rudra SOSP 2021 paper](https://dl.acm.org/doi/10.1145/3477132.3483570)
 
 ---
 
@@ -213,9 +240,73 @@ Day 4: Deep Analysis & Review
 
 | Resource | Location |
 |----------|----------|
-| Solidity Framework | `../InfoSec/` |
-| Main Playbook (Solidity) | `../Audit_Assistant_Playbook.md` |
-| Report Writing Guide | `../InfoSec/report-writing.md` |
+| Solidity Framework | `../SolidityEVM/` |
+| Main Playbook (Solidity) | `../SolidityEVM/Audit_Assistant_Playbook.md` |
+| Report Writing Guide | `../report-writing.md` |
+| Cosmos-SDK Framework | `../Cosmos-SDK/` |
+| Vulnerability Patterns Integration | `../VULNERABILITY_PATTERNS_INTEGRATION.md` |
+
+---
+
+## Automated Tooling Integration
+
+### solana-fender (AST-based, 19 analyzers)
+Static analyzer for Solana/Anchor programs using `syn` crate AST parsing.
+Detects: unauthorized access, type cosplay, arbitrary CPI, bump seed issues,
+account reloading, closing accounts, duplicate mutable accounts, precision loss,
+seed collision, insecure randomness, and more.
+
+```bash
+solana-fender analyze --path programs/
+```
+
+### x-ray / sec3 (LLVM-IR, SVE IDs)
+Compiles Solana Rust programs to LLVM-IR and applies rule-based vulnerability detection.
+20+ SVE IDs covering access control, arithmetic, type confusion, PDA security, and program logic.
+
+```bash
+x-ray scan --target programs/ --output report.json
+```
+
+### OWASP Solana Programs Top 10
+Cross-referenced throughout the framework:
+1. Integer Overflow | 2. Missing Account Verification | 3. Missing Signer Check |
+4. Arithmetic Accuracy | 5. Arbitrary CPI | 6. Account Confusion | 7. Error Not Handled
+
+### Awesome-Rust-Checker (General Rust Safety, 5 tools)
+Academic and industry static analyzers for general Rust safety — applicable to all Rust codebases:
+
+| Tool | Detection Focus | Technique | Citation |
+|------|----------------|-----------|----------|
+| **Rudra** | Send/Sync variance (76 CVEs), panic safety, unsafe destructors | MIR taint + HIR type analysis | SOSP 2021 |
+| **lockbud** | Self-deadlock, lock-order inversion, condvar misuse, atomic TOCTOU, UAF, invalid free | MIR-based rustc plugin | TSE 2024 |
+| **RAPx** | UAF, double-free, dangling pointers, memory leaks, unsafe API verification | MIR alias analysis + Z3 | Multi-paper |
+| **rCanary** | Memory leaks (6 patterns: ManuallyDrop, Box::into_raw, proxy types, container drain, static leak) | Ownership analysis + Z3 | TOSEM |
+| **MIRAI** | Reachable panics, taint flow, timing side channels, precondition violations | Abstract interpretation + Z3 | Meta/Facebook |
+
+```bash
+# Rudra — Send/Sync + panic safety + unsafe destructors
+docker run --rm -v "$(pwd)":/tmp/mount rudra:latest /tmp/mount
+
+# lockbud — concurrency + memory bugs
+cargo install --git https://github.com/nicksial/lockbud
+cargo lockbud -k deadlock -- --target-dir /tmp/lockbud
+cargo lockbud -k memory  -- --target-dir /tmp/lockbud
+cargo lockbud -k all     -- --target-dir /tmp/lockbud
+
+# RAPx — SafeDrop + rCanary + Senryx
+cargo rapx -F   # SafeDrop (UAF/DF)
+cargo rapx -M   # rCanary (memory leaks)
+cargo rapx -V   # Senryx (unsafe verification)
+
+# rCanary (standalone) — memory leak detection
+cargo rcanary
+
+# MIRAI — abstract interpretation
+cargo mirai
+MIRAI_FLAGS="--diag=verify" cargo mirai  # strict mode
+MIRAI_FLAGS="--constant_time" cargo mirai  # timing side channels
+```
 
 ---
 
@@ -256,6 +347,16 @@ find src -name "*.rs" -exec wc -l {} + | sort -rn | head -20
 echo "=== PANIC POINTS ==="  && grep -c "\.unwrap()\|\.expect(" src/*.rs 2>/dev/null
 echo "=== UNSAFE BLOCKS ===" && grep -c "unsafe" src/*.rs 2>/dev/null
 echo "=== ADMIN FUNCTIONS ==" && grep -c "admin\|owner\|authority" src/*.rs 2>/dev/null
+
+# General Rust Safety signals (Awesome-Rust-Checker patterns)
+echo "=== SEND/SYNC IMPLS ==="  && grep -rn "unsafe impl.*Send\|unsafe impl.*Sync" src/
+echo "=== RAW POINTERS ==="    && grep -rn "\*mut\|\*const\|as \*" src/ | grep -v test
+echo "=== MAYBE_UNINIT ==="    && grep -rn "MaybeUninit\|assume_init\|mem::uninitialized\|mem::zeroed" src/
+echo "=== MANUAL_DROP ==="     && grep -rn "ManuallyDrop\|Box::into_raw\|Box::leak\|Box::from_raw" src/
+echo "=== LOCK PATTERNS ==="   && grep -rn "Mutex::new\|RwLock::new\|\.lock()\|\.read()\|\.write()" src/ | grep -v test
+echo "=== ATOMICS ==="         && grep -rn "AtomicUsize\|AtomicBool\|Ordering::" src/ | grep -v test
+echo "=== PTR_READ ==="        && grep -rn "ptr::read\|ptr::write\|from_raw_parts\|set_len\|transmute" src/
+echo "=== DROP IMPLS ==="      && grep -rn "impl.*Drop.*for\|fn drop(" src/
 ```
 
 ---
@@ -266,7 +367,7 @@ This framework is provided for educational and professional use in smart contrac
 
 ---
 
-**Framework Version:** 2.0  
-**Last Updated:** February 2026  
+**Framework Version:** 3.1  
+**Last Updated:** March 2026  
 **Target Ecosystems:** CosmWasm, Solana/Anchor, Substrate, General Rust  
-**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology
+**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 AST analyzers), x-ray SVE detection, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI)

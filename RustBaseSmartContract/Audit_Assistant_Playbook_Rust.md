@@ -301,10 +301,33 @@ Constraints:
   - Ownership/borrowing violations
   - Unsafe code exploitation
   - Error path state corruption
+- Include general Rust safety attack vectors (Awesome-Rust-Checker):
+  - Unsound Send/Sync on generic types → data races (Rudra, 76 CVEs)
+  - Panic safety: lifetime-bypass op + generic call → double-free/uninitialized (Rudra)
+  - Self-deadlock via recursive lock acquisition (lockbud)
+  - Lock-order inversion → deadlock (lockbud)
+  - Atomic TOCTOU: load→check→store without CAS (lockbud)
+  - Use-after-free via raw pointer outliving pointee (lockbud/RAPx)
+  - Invalid free via MaybeUninit::assume_init without write (lockbud)
+  - Memory leak via ManuallyDrop/Box::into_raw/proxy types without Drop (rCanary)
+  - Timing side channel in crypto operations (MIRAI)
+  - Taint flow from untrusted input to privileged operations (MIRAI)
+- Include Solana-specific attack vectors (if Solana program):
+  - Account validation bypass (missing owner/signer/discriminator)
+  - Arbitrary CPI (unchecked program ID) [SVE-1016]
+  - PDA exploitation (non-canonical bump, seed collision, PDA sharing)
+  - Stale data after CPI (missing .reload()) [SF-10]
+  - Type cosplay (same-layout struct confusion) [SVE-1010]
+  - Account reinitialization after improper close [SF-06]
+  - Instruction introspection manipulation [SF-11]
+  - Insecure randomness [SF-13]
+  - Initialization frontrunning [SF-12]
+  - Precision loss in token calculations [SF-17]
 - Reference known exploit patterns:
   - CosmWasm: Anchor, Mirror, Astroport
-  - Solana: Wormhole, Cashio, Mango
+  - Solana: Wormhole, Cashio, Mango, Jet-v1, Crema, spl-token-swap, Raydium, Nirvana
   - Substrate: Acala, Moonbeam
+  - General Rust: Rudra 76 CVEs (Send/Sync variance), hyper (CVE-2021-32714, UnsafeDataflow), smallvec, crossbeam, once_cell unsafe impls
 - Do NOT include purely speculative or unrealistic attacks.
 
 Output STRICTLY in the following format:
@@ -1063,6 +1086,152 @@ For each pattern:
 - Suggested improvement
 ```
 
+### SCAN Solana Account Validation (solana-fender + x-ray patterns)
+```text
+Context:
+Perform a comprehensive Solana account validation scan aligned with
+solana-fender (19 analyzers), x-ray SVE IDs, and OWASP Solana Top 10.
+
+Goal:
+Identify all account validation weaknesses in the Solana/Anchor program.
+
+Focus — check ALL of these categories:
+
+**Access Control [SVE-1001, SF-01, OWASP #3]**
+- Authority/admin/owner fields using AccountInfo instead of Signer<'info>
+- Instructions without is_signer validation
+- Global singleton PDAs initializable by anyone (frontrunning) [SF-12]
+
+**Account Validation [SVE-1002/1007/1010/1019, SF-02/03/07/08/09, OWASP #2/#6]**
+- try_from_slice/BorshDeserialize without .owner == program_id check
+- Borsh structs without discriminator field (type cosplay risk)
+- Two+ Account<'info> fields without key() != constraint (duplicate accounts)
+- SPL TokenAccount::unpack without authority match
+- Init functions without reinitialization guard
+- Sysvar accounts without ID validation [SF-15]
+
+**CPI Security [SVE-1016, SF-04/10/18, OWASP #5]**
+- invoke/invoke_signed without program ID validation
+- Account data read after CPI without .reload()
+- State mutation after CPI call (reentrancy risk)
+
+**PDA Security [SVE-1014/1015, SF-05/16/19, OWASP #6]**
+- create_program_address with user-provided bump seed
+- PDA seeds without user-specific component (only mint+bump)
+- PDA seeds without hardcoded string prefix (seed collision)
+
+**Arithmetic [SVE-1003-1006, SF-14/17, OWASP #1/#4]**
+- Unchecked arithmetic (+, -, *, /) — check if overflow-checks=true in Cargo.toml
+- Division before multiplication (precision loss)
+- checked_div where checked_ceil_div is needed
+
+**Account Lifecycle [SF-06]**
+- Closing accounts without discriminator set + data zeroed
+
+**Transaction Security [SF-11/13, SVE-1017]**
+- load_instruction_at_checked with absolute index
+- Clock/slot-based randomness
+- Slot comparison for malicious simulation
+
+Output:
+For each finding:
+- Category code (SVE-XXXX or SF-NN)
+- Location (file:function:line)
+- Severity (Critical/High/Medium/Low)
+- Description
+- Anchor auto-mitigated? (Yes/No — check for Account<>, Signer<>, Program<> types)
+- Recommended fix
+```
+
+### SCAN Solana CPI & PDA Deep Dive
+```text
+Context:
+Deep scan specifically for CPI and PDA security in a Solana program.
+These are the two most exploited vulnerability classes in Solana history
+(Wormhole, Cashio, Crema, jet-v1).
+
+Goal:
+Map all CPI calls and PDA derivations, then validate each for security.
+
+For each CPI call (invoke / invoke_signed / CpiContext):
+1. What program is being called? Is it validated?
+2. What accounts are passed? Are they all validated?
+3. Is state updated BEFORE the CPI? (reentrancy protection)
+4. Are accounts reloaded AFTER the CPI before reuse?
+5. Is the CPI result properly error-handled?
+
+For each PDA derivation (find_program_address / create_program_address / seeds=):
+1. Are seeds unique per user/purpose? (not just mint+bump)
+2. Does the first seed element have a hardcoded string prefix?
+3. Is the canonical bump used? (not user-provided)
+4. Is the bump stored in account data for efficient reuse?
+5. Could two different PDA types share the same seed combination?
+
+Output:
+CPI MAP:
+- [CPI-1] Location → Target program → Validated? → State before CPI? → Reload after?
+- [CPI-2] ...
+
+PDA MAP:
+- [PDA-1] Type → Seeds → Canonical bump? → Prefix? → Unique? → Collision risk?
+- [PDA-2] ...
+
+Red flags to escalate to Working Chat.
+```
+
+### SCAN General Rust Safety (Awesome-Rust-Checker patterns)
+```text
+Context:
+Deep scan for general Rust safety issues: unsound unsafe code, concurrency bugs,
+memory safety violations, and verification gaps. Uses detection patterns from
+Rudra (76 CVEs), lockbud, RAPx, rCanary, and MIRAI.
+
+Goal:
+Systematically check for every Awesome-Rust-Checker pattern applicable to the codebase.
+
+PART A — UNSAFE CODE SOUNDNESS (Rudra patterns):
+For every `unsafe impl Send` or `unsafe impl Sync` for a generic type:
+1. Are ALL generic type parameters bounded by Send (for Send impls) or Sync (for Sync impls)?
+2. Is PhantomData<T> properly accounted for?
+3. Does the API behavior justify weaker bounds? (e.g., concurrent queue: T: Send suffices for Sync)
+
+For every `unsafe` block:
+4. Does it contain a lifetime-bypassing op (ptr::read, Vec::set_len, from_raw_parts, transmute)?
+5. After the lifetime bypass, can ANY generic/user-provided function be called? (panicking → double-free)
+6. Is ptr::read used on a non-Copy type? (ownership duplication → double-free)
+
+For every `impl Drop` with unsafe code:
+7. Is the unsafe call an FFI extern (expected) or a Rust unsafe fn (suspicious)?
+8. Could the destructor run twice (via ManuallyDrop::drop)?
+9. Is the pointer valid at drop time? Could it be aliased elsewhere?
+
+PART B — CONCURRENCY (lockbud patterns):
+10. Are any Mutex/RwLock guards held while the SAME lock is re-acquired? (DoubleLock)
+11. Are there two code paths that acquire locks A,B vs B,A? (ConflictLock)
+12. Do Condvar wait/notify paths share a lock beyond the wait mutex?
+13. Are atomic load→store pairs non-atomic? (should be compare_exchange or fetch_add)
+
+PART C — MEMORY SAFETY (lockbud + RAPx patterns):
+14. Are raw pointers used after their pointee is dropped?
+15. Is MaybeUninit::assume_init() preceded by .write() on ALL control flow paths?
+16. Are mem::uninitialized() or mem::zeroed() used on non-trivial types?
+17. Are ManuallyDrop/Box::into_raw values eventually reclaimed?
+18. Do structs with *mut T / *const T fields implement Drop?
+
+PART D — VERIFICATION (MIRAI patterns):
+19. Is crypto key/MAC comparison constant-time? (no early return on byte mismatch)
+20. Does untrusted input flow to privileged operations without sanitization?
+21. Are all reachable panic! / unwrap / expect paths intentional?
+
+Output per finding:
+- Pattern ID (RUST1–RUST10) and tool reference
+- Location (file, function, line)
+- Severity (Critical/High/Medium/Low)
+- Confidence (High/Medium/Low)
+- Whether tool would catch it (Rudra/lockbud/RAPx/rCanary/MIRAI)
+- Recommended fix
+```
+
 ---
 
 ---
@@ -1104,6 +1273,32 @@ Rust-specific focus areas for hypothesis formulation:
 - Framework-specific patterns that deviate from best practices
 - Cross-contract calls that assume specific response formats
 - State that could be deserialized differently after migration
+
+Solana-specific focus areas (if applicable):
+- Account structs using AccountInfo where Signer/Account/Program types exist
+- CPI calls where the program target comes from user input
+- PDA seeds that look insufficient for uniqueness (no prefix, no user key)
+- Accounts used after CPI without reload — could data be stale?
+- Close functions that zero lamports but not discriminator/data
+- Two mutable accounts of the same type without inequality constraint
+- Init functions without reinitialization guards
+- Division-before-multiplication patterns in token/fee calculations
+- Clock/slot usage in security-critical randomness
+- Instruction introspection with hardcoded absolute indexes
+
+General Rust safety focus areas (all targets):
+- `unsafe impl Send/Sync` for generic types without proper trait bounds
+- `unsafe` blocks containing ptr::read on non-Copy types or set_len + generic calls
+- Drop impls calling Rust unsafe fns (vs FFI extern — the expected case)
+- Mutex/RwLock re-acquisition in same call chain (self-deadlock)
+- Lock acquisition order inconsistency across functions (A→B vs B→A)
+- Atomic load→check→store without compare_exchange (TOCTOU)
+- Raw pointers surviving beyond the lifetime of their pointee (UAF)
+- MaybeUninit::assume_init() without preceding .write() on all paths
+- ManuallyDrop / Box::into_raw / Box::leak without reclamation
+- Structs with *mut T fields that don't implement Drop (memory leak)
+- Secret-dependent branches or early-return in crypto comparisons
+- Taint: user input reaching unsafe operations without validation
 ```
 
 ### Examples:
@@ -1223,7 +1418,7 @@ for x in vec  → add limits
 
 ---
 
-**Framework Version:** 2.0
-**Last Updated:** February 2026
+**Framework Version:** 3.1
+**Last Updated:** March 2026
 **Target Ecosystems:** CosmWasm, Solana/Anchor, Substrate, General Rust
-**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology
+**Enhanced with:** ClaudeSkills Trail of Bits patterns, InfoSec_Us_Team methodology, solana-fender (19 analyzers), x-ray SVE IDs, OWASP Solana Top 10, Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI)

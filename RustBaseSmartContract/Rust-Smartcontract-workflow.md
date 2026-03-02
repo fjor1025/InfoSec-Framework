@@ -66,6 +66,16 @@ grep -rn "pub fn instantiate\|pub fn execute\|pub fn query\|pub fn migrate\|pub 
 grep -rn "#\[program\]\|#\[access_control\]" src/
 grep -rn "pub fn\|handler\|processor" src/ | grep -i "instruction\|process\|handler"
 
+# Find Anchor account validation structs
+grep -rn "#\[derive(Accounts)\]" src/
+grep -rn "#\[account(" src/ | head -30
+
+# Find Solana account deserialization (type cosplay risk — SVE-1010/1011)
+grep -rn "try_from_slice\|try_deserialize\|BorshDeserialize" src/ | grep -v test
+
+# Find CPI calls (arbitrary CPI risk — SVE-1016)
+grep -rn "invoke\b\|invoke_signed\b\|CpiContext" src/ | grep -v test
+
 # Find blockchain entry points — Substrate
 grep -rn "#\[pallet::call\]\|#\[pallet::hooks\]" src/
 grep -rn "pub fn.*origin" src/ | grep -v test
@@ -378,11 +388,16 @@ Before inventing new attacks, check if the code resembles past exploits:
 - [ ] **TerraSwap**: Slippage tolerance bypass
 
 **Solana Exploits:**
-- [ ] **Wormhole (2022)**: Signature verification bypass (secp256k1)
-- [ ] **Cashio (2022)**: Missing signer validation on mint
-- [ ] **Slope Wallet (2022)**: Private key exposure via logging
-- [ ] **Mango Markets (2022)**: Oracle manipulation + self-liquidation
-- [ ] **Crema Finance (2022)**: Flash loan + price manipulation
+- [ ] **Wormhole (2022)**: Signature verification bypass — `secp256k1` program return unchecked [SVE-1001]
+- [ ] **Cashio (2022)**: Missing signer + ownership validation on infinite mint [SVE-1001/1002]
+- [ ] **Mango Markets (2022)**: Oracle manipulation → self-liquidation (price manipulation + account draining)
+- [ ] **Crema Finance (2022)**: Flash loan + tick array price manipulation via CPI
+- [ ] **Slope Wallet (2022)**: Private key exposure via Sentry logging (supply-chain, not on-chain)
+- [ ] **Jet Protocol v1 (2021)**: Incorrect `break` instead of `continue` in obligation loop [SVE-2001]
+- [ ] **Solend (2022)**: Oracle stale price exploitation in liquidation
+- [ ] **spl-token-swap**: Incorrect `checked_div` instead of `checked_ceil_div` for fee calculation [SVE-2004]
+- [ ] **Raydium (2022)**: Insufficient account validation in AMM swap path
+- [ ] **Nirvana Finance (2022)**: Flash loan → fake collateral → unchecked mint
 
 **Substrate/Polkadot Exploits:**
 - [ ] **Acala (2022)**: aUSD mint bug via misconfigured honzon
@@ -413,17 +428,53 @@ Based on the target framework:
 - [ ] Migrate function access control
 - [ ] Query vs Execute state visibility
 
-**Solana (Anchor) - Enhanced with ClaudeSkills Patterns:**
-- [ ] Account validation bypass
-- [ ] PDA seed collision
-- [ ] CPI privilege escalation
-- [ ] Rent-exempt balance manipulation
-- [ ] Signer authority confusion
-- [ ] **Arbitrary CPI** (CRITICAL): User-controlled program ID in `invoke()`
-- [ ] **Improper PDA Validation** (CRITICAL): Non-canonical bump exploitation
-- [ ] **Missing Ownership Check** (HIGH): Deserializing without owner check
-- [ ] **Missing Signer Check** (CRITICAL): Authority without `is_signer`
-- [ ] **Sysvar Spoofing** (HIGH): Pre-Solana 1.8.1 `load_instruction_at()` issue
+**Solana (Anchor) — Comprehensive Patterns (solana-fender + x-ray SVE + OWASP + ClaudeSkills):**
+
+**Category A: Access Control (OWASP #3, SVE-1001)**
+- [ ] **Missing Signer Check** (CRITICAL) [SVE-1001, SF-01]: Authority without `is_signer` — use `Signer<'info>`
+- [ ] **Unauthorized Access** (HIGH) [SF-01]: `AccountInfo` used for authority/admin fields instead of `Signer<'info>`
+- [ ] **Initialization Frontrunning** (MEDIUM) [SF-12]: Global singleton PDAs (static seeds) initializable by anyone
+
+**Category B: Account Validation (OWASP #2, #6, SVE-1002/1007/1019)**
+- [ ] **Missing Ownership Check** (HIGH) [SVE-1002, SF-02]: `try_from_slice()` without `.owner == program_id` check
+- [ ] **Type Cosplay / Account Confusion** (HIGH) [SVE-1010/1011, SF-03]: Same-layout structs allow type confusion attacks
+- [ ] **Account Data Matching** (LOW) [SF-08]: SPL token unpacked without verifying authority matches owner
+- [ ] **Account Initialization** (MEDIUM) [SF-09]: No reinitialization guard (`is_initialized` check missing)
+- [ ] **Invalid Sysvar Accounts** (HIGH) [SVE-1019, SF-15]: Sysvar not validated against `sysvar::*::ID`
+- [ ] **Duplicate Mutable Accounts** (MEDIUM) [SF-07]: Two `Account<'info>` fields with no `key() !=` constraint
+- [ ] **Unverified Parsed Account** (HIGH) [SVE-1007]: Account data parsed without key or owner validation
+
+**Category C: CPI Security (OWASP #5, SVE-1016)**
+- [ ] **Arbitrary CPI** (CRITICAL) [SVE-1016, SF-04]: User-controlled program ID in `invoke()` / `invoke_signed()`
+- [ ] **Account Reloading** (HIGH) [SF-10]: Account used after CPI without `.reload()` — stale data
+- [ ] **Reentrancy via CPI** (HIGH) [SF-18]: State updated after `invoke()`/CPI without guard
+
+**Category D: PDA Security (OWASP #6, SVE-1014/1015)**
+- [ ] **Improper PDA Validation** (CRITICAL) [SVE-1014, SF-05]: `create_program_address()` with user-supplied bump
+- [ ] **PDA Sharing** (MEDIUM) [SVE-1015, SF-16]: Seeds only contain `mint`+`bump` — no user-unique component
+- [ ] **Seed Collision** (MEDIUM) [SF-19]: PDA seeds without hardcoded string prefix (`b"prefix"`) across types
+- [ ] **Bump Seed Canonicalization** (MEDIUM) [SF-05]: User-provided bump accepted without `find_program_address` validation
+
+**Category E: Arithmetic Safety (OWASP #1, #4, SVE-1003–1006)**
+- [ ] **Integer Overflow/Underflow** (MEDIUM) [SVE-1003/1004/1005/1006, SF-14]: Unchecked `+`, `-`, `*`, `/`
+- [ ] **Precision Loss** (MEDIUM) [SF-17]: Division before multiplication `(a / b) * c` truncates
+- [ ] **Incorrect Division Logic** [SVE-2004]: `checked_div` where `checked_ceil_div` is needed
+- [ ] **Incorrect Token Calculation** [SVE-2005]: Using balances instead of reserves in swap math
+
+**Category F: Account Lifecycle**
+- [ ] **Closing Accounts** (MEDIUM) [SF-06]: Lamports zeroed without discriminator set + data zeroed → reinitialization
+- [ ] **Rent-Exempt Balance** (LOW): Account below rent-exempt threshold may be garbage-collected
+
+**Category G: Transaction Security**
+- [ ] **Improper Instruction Introspection** (HIGH) [SF-11]: Hardcoded absolute index in `load_instruction_at_checked()`
+- [ ] **Insecure Randomness** (MEDIUM) [SF-13]: Using `Clock::unix_timestamp` / `slot` / `SlotHashes` for randomness
+- [ ] **Malicious Simulation** [SVE-1017]: Slot-based comparisons for transaction simulation detection
+
+**Category H: Program Logic (SVE-2001–2005)**
+- [ ] **Incorrect Loop Break Logic** [SVE-2001]: `break` instead of `continue` (jet-v1 exploit pattern)
+- [ ] **Error Not Handled** (OWASP #7): Error returned from CPI without logging, rollback, or state cleanup
+
+> **Legend**: SVE = sec3 x-ray Solana Vulnerability Enumeration, SF = solana-fender analyzer, OWASP = OWASP Solana Top 10
 
 **Substrate - Enhanced with ClaudeSkills Patterns:**
 - [ ] Extrinsic weight manipulation
@@ -494,9 +545,500 @@ let issues = vec![
 ];
 ```
 
----
+### **Step 6.5: Solana Static Analysis Tooling Integration**
 
-## **Phase 7: Finding Documentation (Rust Edition)**
+Use these automated tools to supplement manual review. Run them BEFORE manual deep dives (Phase 4) to generate a prioritized signal list.
+
+#### **Tool 1: solana-fender (AST-based, 19 analyzers)**
+```bash
+# Install and run solana-fender against your Anchor/native program
+cargo install solana-fender  # or clone and build locally
+solana-fender analyze --path programs/
+
+# Key analyzers to focus on:
+# - unauthorized_access (Signer vs AccountInfo)
+# - arbitrary_cpi (unchecked program ID in invoke)
+# - bump_seed_canonicalization (user-provided bump)
+# - closing_accounts (reinitialization after close)
+# - account_reloading (stale data after CPI)
+# - type_cosplay (discriminator-less Borsh structs)
+# - precision_loss (division before multiplication)
+# - seed_collision (PDA seeds without static prefix)
+```
+
+**solana-fender Detection Map (19 patterns):**
+```markdown
+| Analyzer            | Category           | Severity | What It Flags |
+|---------------------|--------------------|---------|-------------------------------------------------|
+| unauthorized_access | Access Control     | High    | AccountInfo for authority fields, no is_signer |
+| missing_owner       | Account Validation | Low     | SplTokenAccount::unpack without owner check     |
+| type_cosplay        | Account Validation | High    | try_from_slice without discriminator validation  |
+| arbitrary_cpi       | CPI Security       | Medium  | invoke/invoke_signed without program ID check   |
+| bump_seed_canon     | PDA Security       | Medium  | create_program_address with user bump            |
+| closing_accounts    | Account Lifecycle  | Medium  | Close without discriminator + data zero          |
+| duplicate_mutable   | Account Validation | Medium  | Two Account fields, no key() != constraint       |
+| account_data_match  | Account Validation | Low     | SPL unpack without authority == token.owner       |
+| account_init        | Account Lifecycle  | Medium  | Init function without is_initialized check       |
+| account_reloading   | CPI Security       | High    | Account used after CPI without .reload()         |
+| instruction_intro   | Transaction Sec    | High    | Absolute index in load_instruction_at_checked    |
+| init_frontrunning   | Access Control     | Medium  | Static-seed PDA init without authority constraint |
+| insecure_randomness | Crypto Security    | Medium  | Clock::unix_timestamp/slot for randomness        |
+| integer_overflow    | Arithmetic         | Medium  | Unchecked +, -, *, /                             |
+| invalid_sysvar      | Account Validation | Low     | Sysvar used without ID validation                |
+| pda_sharing         | PDA Security       | Low     | Seeds with only mint+bump (no user component)    |
+| precision_loss      | Arithmetic         | Medium  | (a / b) * c pattern → truncated intermediate     |
+| reentrancy          | CPI Security       | High    | CPI call without reentry guard                   |
+| seed_collision      | PDA Security       | Medium  | PDA seeds without b"prefix" first element        |
+```
+
+#### **Tool 2: x-ray / sec3 (LLVM-IR static analysis, SVE IDs)**
+```bash
+# x-ray compiles Solana programs to LLVM-IR and runs rule-based detection
+# Install: https://github.com/aspect-build/x-ray
+x-ray scan --target programs/ --output report.json
+
+# Priority mapping (higher = more critical):
+# Priority 11: SVE-1017 (Malicious Simulation)
+# Priority 10: SVE-1001 (Missing Signer), SVE-1002 (Missing Owner), SVE-2001 (Break Logic)
+# Priority  9: SVE-1007 (Unverified Account), SVE-1014 (Bump Seed), SVE-1016 (Arbitrary CPI)
+# Priority  8: SVE-1003/1004 (Add/Sub Overflow), SVE-1019 (Unvalidated Account)
+# Priority  6: SVE-1005 (Mul Overflow), SVE-1010 (Full Type Cosplay)
+# Priority  5: SVE-1006 (Div Overflow), SVE-1011 (Partial Cosplay), SVE-1015 (PDA Sharing)
+```
+
+**x-ray SVE Reference Table:**
+```markdown
+| SVE ID | Name                     | Priority | Category |
+|--------|--------------------------|----------|------------------------------|
+| 1001   | MissingSignerCheck       | 10       | Access Control               |
+| 1002   | MissingOwnerCheck        | 10       | Account Validation           |
+| 1003   | IntegerAddOverflow       | 8        | Arithmetic Safety            |
+| 1004   | IntegerUnderflow         | 8        | Arithmetic Safety            |
+| 1005   | IntegerMulOverflow       | 6        | Arithmetic Safety            |
+| 1006   | IntegerDivOverflow       | 5        | Arithmetic Safety            |
+| 1007   | UnverifiedParsedAccount  | 9        | Account Validation           |
+| 1010   | TypeFullCosplay          | 6        | Structural Vulnerability     |
+| 1011   | TypePartialCosplay       | 5        | Structural Vulnerability     |
+| 1014   | BumpSeedNotValidated     | 9        | PDA Security                 |
+| 1015   | InsecurePDASharing       | 5        | PDA Security                 |
+| 1016   | ArbitraryCPI             | 9        | CPI Security                 |
+| 1017   | MaliciousSimulation      | 11       | Transaction Security         |
+| 1019   | UnvalidatedAccount       | 8        | Account Validation           |
+| 2001   | IncorrectBreakLogic      | 10       | Program Logic (jet-v1)       |
+| 2004   | IncorrectDivisionLogic   | 8        | Arithmetic (ceil_div)        |
+| 2005   | IncorrectTokenCalculation| 9        | DeFi-Specific Logic          |
+```
+
+#### **Tool 3: Manual grep-based rapid signal generation**
+```bash
+# === SOLANA-SPECIFIC DANGER MAP ===
+echo "=== MISSING SIGNER CHECKS ==="
+grep -rn "AccountInfo" src/ | grep -i "authority\|admin\|owner\|signer" | grep -v "Signer<"
+
+echo "=== UNCHECKED CPI CALLS ==="
+grep -rn "invoke\b\|invoke_signed\b" src/ | grep -v test
+
+echo "=== PDA WITHOUT find_program_address ==="
+grep -rn "create_program_address" src/ | grep -v "find_program_address"
+
+echo "=== USER-PROVIDED BUMP SEEDS ==="
+grep -rn "fn.*bump.*:" src/ | grep -v test
+
+echo "=== STALE ACCOUNT AFTER CPI ==="
+grep -rn "CpiContext::new\|invoke(" src/ | grep -v test
+# Then check: is .reload() called after CPI on used accounts?
+
+echo "=== ACCOUNT CLOSE WITHOUT DISCRIMINATOR ==="
+grep -rn "try_borrow_mut_lamports\|lamports.*= 0" src/ | grep -v test
+
+echo "=== TYPE COSPLAY RISK (Borsh without discriminator) ==="
+grep -rn "try_from_slice\|BorshDeserialize" src/ | grep -v "discriminant\|#\[account\]"
+
+echo "=== DUPLICATE MUTABLE ACCOUNTS ==="
+grep -rn "Account<'info" src/ | grep -v test | sort | uniq -c | sort -rn
+
+echo "=== INSECURE RANDOMNESS ==="
+grep -rn "unix_timestamp\|slot\(\)\|SlotHashes\|RecentBlockhashes" src/ | grep -v test
+
+echo "=== ABSOLUTE INSTRUCTION INDEX ==="
+grep -rn "load_instruction_at_checked\|load_instruction_at(" src/ | grep -v test
+
+echo "=== PRECISION LOSS (div before mul) ==="
+grep -rn "checked_div.*checked_mul\|/ .*\*" src/ | grep -v test
+
+echo "=== INIT WITHOUT REINITIALIZATION GUARD ==="
+grep -rn "fn.*init\|fn.*create\|fn.*setup" src/ | grep -v "is_initialized\|AccountAlreadyInitialized"
+
+echo "=== SEED COLLISION RISK ==="
+grep -rn "seeds = \[" src/ | grep -v "b\"\|\.as_bytes()"
+```
+
+#### **OWASP Solana Programs Top 10 Quick Checklist**
+Cross-reference findings against OWASP categories:
+```markdown
+| OWASP # | Category                           | Tool Coverage |
+|---------|------------------------------------|-----------------------------|
+| 1       | Integer Overflow/Underflow          | x-ray SVE-1003–1006, SF-14 |
+| 2       | Missing Account Verification       | x-ray SVE-1002/1007, SF-02 |
+| 3       | Missing Signer Check               | x-ray SVE-1001, SF-01      |
+| 4       | Arithmetic Accuracy (Precision)    | SF-17, SVE-2004/2005       |
+| 5       | Arbitrary Signed Program Invocation| x-ray SVE-1016, SF-04      |
+| 6       | Account Confusion / Type Cosplay   | x-ray SVE-1010/1011, SF-03 |
+| 7       | Error Not Handled                  | Manual review, SF patterns  |
+```
+
+### **Step 6.6: General Rust Safety Tooling (Awesome-Rust-Checker)**
+
+Use these research-grade static analyzers to detect memory safety, concurrency, and unsafe code bugs in ANY Rust codebase — not blockchain-specific. Run them on contracts that use `unsafe`, raw pointers, concurrency primitives, or FFI.
+
+#### **Tool A: Rudra (SOSP 2021, 76 CVEs — Georgia Tech)**
+Detects unsound `unsafe` usage patterns via MIR taint analysis and type-level checking.
+
+```bash
+# Install (requires specific nightly)
+cargo install rudra
+# Run on target crate
+cargo rudra
+```
+
+**Three analysis modules:**
+
+| Module | Bug Class | Severity | What It Finds |
+|--------|-----------|----------|---------------|
+| **UnsafeDataflow** | Panic safety (double-free, uninitialized mem) | Error–Info | `ptr::read` on non-Copy + generic call, `Vec::set_len(n)` + generic call, `Vec::from_raw_parts` + generic, `transmute` + generic |
+| **UnsafeDestructor** | Unsafe code in Drop::drop() | Warning | Non-FFI unsafe function calls inside `impl Drop` bodies |
+| **SendSyncVariance** | Incorrect Send/Sync impls on generics | Error–Info | `impl Send for Foo<T>` without `T: Send` bound, `impl Sync` without `T: Sync`, API-behavior analysis for concurrent containers |
+
+**Key patterns Rudra catches:**
+
+```rust
+// Pattern R1: Panic Safety — Vec::set_len before init (Error)
+unsafe {
+    self.vec.set_len(self.vec.len() + to_push.len()); // Extends BEFORE writing
+    for (i, x) in to_push.iter().enumerate() {
+        ptr.offset(i as isize).write(x.clone());      // clone() can panic → double-free
+    }
+}
+// FIX: Write elements THEN set_len
+
+// Pattern R2: Panic Safety — ptr::read duplicates ownership (Warning)
+unsafe { std::ptr::read(&box_val as *const _); }  // Duplicates Box ownership
+some_generic_call();                                // If this panics → double-free
+// FIX: Use ptr::read only on Copy types, or restructure
+
+// Pattern R3: Unsound Send impl on generic wrapper (Error)
+unsafe impl<T> Send for MyWrapper<T> {}  // T is NOT bounded by Send!
+// If T contains Rc<Cell<_>>, sending across threads → data race
+// FIX: unsafe impl<T: Send> Send for MyWrapper<T> {}
+
+// Pattern R4: Unsafe destructor (Warning)
+impl Drop for StrcCtx {
+    fn drop(&mut self) {
+        unsafe { CString::from_raw(self.ptr as *mut c_char); }  // RUSTSEC-2020-0032
+    }
+}
+// AUDIT: Verify ptr is valid, not double-freed, not aliased
+```
+
+**Rudra UnsafeDataflow source classification:**
+```markdown
+| Source Type | Examples | Severity when + generic call |
+|-------------|----------|------------------------------|
+| Strong | Vec::from_raw_parts, Vec::set_len(n>0) | Error (High) |
+| Strong | ptr::read, intrinsics::copy | Warning (Med) |
+| Weak | transmute, ptr::write, ptr::as_ref | Info (Low) |
+| Weak | slice::get_unchecked, slice::from_raw_parts | Info (Low) |
+```
+
+#### **Tool B: lockbud (TSE'24 — concurrency + memory)**
+Detects deadlocks, atomicity violations, use-after-free, invalid free, and panic locations in Rust MIR.
+
+```bash
+# Install (requires nightly-2025-10-02)
+cargo install lockbud
+# Run specific detector
+cargo lockbud -k deadlock       # Deadlock detection
+cargo lockbud -k memory         # UAF + invalid free
+cargo lockbud -k atomicity_violation  # Atomic TOCTOU
+cargo lockbud -k panic          # Panic location map
+cargo lockbud -k all            # All detectors
+```
+
+**Five detectors:**
+
+| Detector | Bug Class | Confidence | Patterns |
+|----------|-----------|------------|----------|
+| **DoubleLock** | Self-deadlock | Probably/Possibly | Mutex held → same Mutex acquired (intra + inter-procedural) |
+| **ConflictLock** | Lock-order inversion | Possibly | Thread A: lock(a)→lock(b), Thread B: lock(b)→lock(a) — cycle detection |
+| **CondvarDeadlock** | Condvar misuse | Possibly | Lock held before both `wait` and `notify` on same Condvar |
+| **AtomicityViolation** | Atomic TOCTOU | Possibly | `atomic.load()` then control/data-dependent `atomic.store()` without CAS |
+| **UseAfterFree** | Raw ptr use after drop | Possibly | Raw ptr → pointee dropped → ptr used/escapes to global/return |
+| **InvalidFree** | Drop of uninitialized | Possibly | `mem::uninitialized()` or `MaybeUninit::assume_init()` without prior `.write()` |
+| **PanicLocations** | All panic points | Informational | Maps every `unwrap()`, `expect()`, `panic!()`, `assert!()`, `panic_fmt` |
+
+**Supported lock types:** `std::sync::{Mutex,RwLock}`, `parking_lot::{Mutex,RwLock}`, `spin::{Mutex,RwLock}` — 9 guard variants.
+
+```rust
+// Pattern LB1: DoubleLock — self-deadlock (Probably)
+let guard_a = mutex.lock().unwrap();
+match *guard_a {
+    State::A => {
+        let guard_b = mutex.lock().unwrap();  // DEADLOCK on same mutex!
+    }
+}
+
+// Pattern LB2: ConflictLock — lock-order inversion (Possibly)
+fn thread_1(a: &Mutex<_>, b: &Mutex<_>) {
+    let _ga = a.lock(); let _gb = b.lock();  // Order: a → b
+}
+fn thread_2(a: &Mutex<_>, b: &Mutex<_>) {
+    let _gb = b.lock(); let _ga = a.lock();  // Order: b → a — DEADLOCK!
+}
+
+// Pattern LB3: Atomic TOCTOU (Possibly)
+if counter.load(Ordering::SeqCst) == 0 {      // Read
+    counter.store(1, Ordering::SeqCst);        // Write — not atomic RMW!
+}
+// FIX: counter.compare_exchange(0, 1, ...)
+
+// Pattern LB4: Use-After-Free via raw ptr (Possibly)
+let ptr = vec.as_ptr();
+drop(vec);              // Pointee freed
+unsafe { *ptr };        // UAF!
+
+// Pattern LB5: Invalid free — MaybeUninit without write (Possibly)
+let obj: Vec<i32> = unsafe { MaybeUninit::uninit().assume_init() };
+// drop(obj) → frees garbage pointer → UB
+// FIX: uninit.write(value) before assume_init()
+```
+
+#### **Tool C: RAPx — Rust Analysis Platform (SafeDrop + rCanary + Senryx)**
+Comprehensive MIR analysis platform with field-sensitive, path-sensitive bug detection. Includes SafeDrop (UAF/DF), rCanary (memory leaks), Senryx (unsafe contract verification), and Opt (performance).
+
+```bash
+# Install (requires nightly-2025-12-06)
+cargo install rapx
+# Run specific analysis
+cargo rapx -F          # SafeDrop: UAF, double-free, dangling pointers
+cargo rapx -M          # rCanary: memory leak detection (uses Z3)
+cargo rapx -V          # Senryx: unsafe API safety verification (uses Z3)
+cargo rapx -O          # Opt: performance bug detection
+cargo rapx -- -upg     # UPG: unsafety propagation graph (DOT visualization)
+```
+
+**Six analysis modules:**
+
+| Module | Flag | Bug Class | Analysis Technique |
+|--------|------|-----------|-------------------|
+| **SafeDrop** | `-F` | Use-after-free, double-free, dangling ptr | MIR path-sensitive + alias analysis + owned-heap tracking |
+| **rCanary** | `-M` | Memory leaks | Ownership-based flow analysis + Z3 constraint solving |
+| **Senryx** | `-V` | Unsafe API contract violations | Path-sensitive symbolic execution + Z3, 20+ safety contracts |
+| **Opt** | `-O` | Performance bugs | Dataflow pattern matching (6 sub-checkers) |
+| **UPG** | `-upg` | Unsafety propagation | HIR/MIR unsafe block + call graph visualization |
+| **Alias** | `-alias` | (Core) | Field-sensitive MOP/MFP alias pairs |
+
+**SafeDrop detection patterns:**
+```rust
+// Pattern RX1: Use-After-Free via ManuallyDrop (Confidence-scored)
+let md = ManuallyDrop::new(Box::new(42));
+unsafe { ManuallyDrop::drop(&mut md); }
+println!("{}", *md);  // UAF — referent already freed
+
+// Pattern RX2: Double-Free via unwinding path
+let v = vec![1, 2, 3];
+let ptr = v.as_ptr();
+drop(v);
+unsafe { Vec::from_raw_parts(ptr, 3, 3); }  // Double-free on drop
+
+// Pattern RX3: Dangling pointer — returning ptr to local
+fn danger() -> *mut Vec<u8> {
+    let mut v = vec![1, 2, 3];
+    &mut v as *mut Vec<u8>  // Dangling — v dropped at end of scope
+}
+```
+
+**Senryx safety property contracts (21 properties):**
+```markdown
+| Contract | What It Verifies |
+|----------|-----------------|
+| Align(Ty) | Pointer aligned for type T |
+| NonNull | Pointer is non-null |
+| Allocated(Ty, len) | Memory allocated for len elements |
+| InBound(Ty, len) | Pointer + offset within bounds |
+| NonOverlap | Source/dest memory regions don't overlap |
+| Init(Ty, len) | Memory is initialized |
+| ValidNum(range) | Numeric value within range |
+| ValidPtr(Ty, len) | Aligned + allocated + non-null |
+| Deref | Safe to dereference |
+| Typed(Ty) | Value is valid for declared type |
+| Owning | Caller owns the memory |
+| Alive | Referent not dropped |
+| Alias | No aliasing violation |
+| Unwrap | Option/Result is Some/Ok |
+```
+
+#### **Tool D: rCanary (Standalone memory leak detector)**
+Semi-automated Rust memory leak detector using ownership-based type + flow analysis with Z3.
+
+```bash
+# Install
+cargo install rlc
+# Run on target crate
+cargo rlc
+```
+
+**Six leak patterns detected:**
+
+| Pattern | Mechanism | Example |
+|---------|-----------|---------|
+| **Owned Instance** | `ManuallyDrop::new(Box::new(...))` never freed | Escapes OBRM |
+| **Owned Pointer** | `Box::into_raw()` without `Box::from_raw()` | Raw ptr never reclaimed |
+| **Owned Reference** | `ManuallyDrop::new(box).as_ref()` | Reference to leaked memory |
+| **Proxy Type** | Struct with `*mut T` field, no `Drop` impl | No destructor for inner ptr |
+| **Container Drain** | `clear()` resets indices without element drops | Owned items abandoned |
+| **Static Leak** | `Box::leak()` → `&'static mut [T]` in struct field | Ownership chain destroyed |
+
+```rust
+// Pattern RC1: Box::into_raw without from_raw
+let buf = Box::new([0u8; 1024]);
+let ptr = Box::into_raw(buf);  // Ownership transferred to raw ptr
+// ... ptr is never passed to Box::from_raw() → LEAK
+
+// Pattern RC2: Proxy type without Drop
+struct Buffer {
+    ptr: *mut u8,     // Raw pointer to heap allocation
+    len: usize,
+}
+// No impl Drop for Buffer → ptr never freed → LEAK
+// FIX: impl Drop for Buffer { fn drop(&mut self) { unsafe { dealloc(self.ptr, ...) } } }
+
+// Pattern RC3: Container clear without element drop
+fn clear(&mut self) {
+    self.head = 0;
+    self.tail = 0;  // Elements with Drop not called → LEAK
+}
+// FIX: iterate and drop each element before resetting indices
+```
+
+#### **Tool E: MIRAI (Facebook/Meta — MIR Abstract Interpreter)**
+Full-program abstract interpreter with taint analysis, constant-time verification, and panic reachability.
+
+```bash
+# Install
+cargo install mirai
+# Run on target crate
+cargo mirai                              # Default: avoid false positives
+MIRAI_FLAGS="--diag=verify" cargo mirai  # Stricter: flag incomplete analysis
+MIRAI_FLAGS="--constant_time SecretTag" cargo mirai  # Constant-time analysis
+```
+
+**Bug classes detected:**
+
+| Class | Detection Method | Use Case |
+|-------|-----------------|----------|
+| **Reachable panics** | Abstract interpretation + Z3 | DoS in contracts, chain halt in Substrate |
+| **Taint flow violations** | Configurable tag-based taint analysis | Unsanitized input → privileged operations |
+| **Timing side channels** | `--constant_time` flag + tag tracking | Crypto key comparison, signature verification |
+| **Precondition violations** | Function summary analysis | Callers not satisfying documented API contracts |
+| **Integer overflow** | Interval domain + symbolic execution | All arithmetic operations checked |
+
+**MIRAI annotation macros (mirai-annotations crate):**
+```rust
+use mirai_annotations::*;
+
+// Precondition: verified at call sites
+fn withdraw(amount: u64) {
+    precondition!(amount > 0, "amount must be positive");
+    precondition!(amount <= self.balance, "insufficient balance");
+}
+
+// Taint tracking: mark input as untrusted
+fn process_input(data: &[u8]) {
+    add_tag!(&data, Tainted);            // Mark as tainted
+    let parsed = parse(data);
+    verify!(does_not_have_tag!(&parsed, Tainted)); // Must sanitize before use
+}
+
+// Constant-time verification: detect branching on secrets
+fn verify_mac(key: &[u8], msg: &[u8], tag: &[u8]) -> bool {
+    add_tag!(&key, SecretTaint);
+    // If key influences a branch condition → MIRAI warns (timing side channel)
+    compute_hmac(key, msg) == tag  // Branch on secret → timing leak!
+}
+```
+
+**Diagnostic levels:**
+```markdown
+| Level | Behavior |
+|-------|----------|
+| default | Suppress diagnostics from incomplete analysis (fewest false positives) |
+| verify | Report incompletely analyzed functions (missing summaries) |
+| library | Require explicit preconditions for all public functions |
+| paranoid | Report all possible errors, continue after incomplete calls |
+```
+
+#### **General Rust Safety Tooling Decision Matrix**
+
+```markdown
+| When to Use | Tool | Why |
+|-------------|------|-----|
+| Codebase uses `unsafe` blocks | Rudra | Catches unsound patterns with 76-CVE track record |
+| Codebase uses `unsafe` blocks | RAPx -V (Senryx) | Verifies 21 safety contracts on unsafe API calls |
+| Codebase has concurrency (Mutex, RwLock, atomics) | lockbud | DoubleLock + ConflictLock + Atomic TOCTOU |
+| Codebase uses raw pointers + unsafe | lockbud -k memory | UAF + invalid free via MIR analysis |
+| Codebase uses raw pointers + unsafe | RAPx -F (SafeDrop) | Field-sensitive UAF/DF/dangling detection |
+| Suspect memory leaks (ManuallyDrop, into_raw, FFI) | RAPx -M (rCanary) | Ownership + Z3-based leak detection |
+| Constant-time requirements (crypto, signatures) | MIRAI --constant_time | Tag-based timing side channel detection |
+| Need full panic reachability map | MIRAI | Abstract interpretation across all paths |
+| Need panic location inventory | lockbud -k panic | Lists all unwrap/expect/panic sites |
+| Performance-sensitive Rust code | RAPx -O (Opt) | Unnecessary clones, missing reserve, bounds checks |
+| Custom `impl Send/Sync` on generic types | Rudra | SendSyncVariance catches unsound impls (76 CVEs!) |
+| Complex Drop logic with unsafe | Rudra | UnsafeDestructor detects unsafe in Drop::drop() |
+| Visualize unsafety propagation | RAPx -upg | DOT graph of unsafe → caller chains |
+```
+
+#### **General Rust grep-based rapid signal generation**
+```bash
+# === GENERAL RUST SAFETY DANGER MAP ===
+echo "=== UNSAFE BLOCKS ==="
+grep -rn "unsafe\s*{" src/ | grep -v test | grep -v "// SAFETY:"
+
+echo "=== IMPL SEND/SYNC ON GENERICS (Rudra pattern) ==="
+grep -rn "unsafe impl.*Send\|unsafe impl.*Sync" src/ | grep -v test
+
+echo "=== RAW POINTERS ==="
+grep -rn "\*mut \|\*const \|as \*mut\|as \*const" src/ | grep -v test
+
+echo "=== PTR::READ/WRITE ON NON-COPY (Rudra pattern) ==="
+grep -rn "ptr::read\|ptr::write\|ptr::copy" src/ | grep -v test
+
+echo "=== VEC::SET_LEN (Rudra Error-level) ==="
+grep -rn "set_len\|from_raw_parts" src/ | grep -v test
+
+echo "=== MANUAL DROP / MEM::FORGET ==="
+grep -rn "ManuallyDrop\|mem::forget\|into_raw\|from_raw" src/ | grep -v test
+
+echo "=== UNINIT MEMORY ==="
+grep -rn "MaybeUninit\|mem::uninitialized\|mem::zeroed" src/ | grep -v test
+
+echo "=== LOCK USAGE (lockbud target) ==="
+grep -rn "Mutex::new\|RwLock::new\|\.lock()\|\.read()\|\.write()" src/ | grep -v test
+
+echo "=== ATOMICS (lockbud TOCTOU target) ==="
+grep -rn "AtomicBool\|AtomicU\|AtomicI\|Ordering::" src/ | grep -v test
+
+echo "=== TRANSMUTE ==="
+grep -rn "transmute\b" src/ | grep -v test
+
+echo "=== PANIC POINTS ==="
+grep -rn "\.unwrap()\|\.expect(\|panic!\|unreachable!\|todo!\|unimplemented!" src/ | grep -c -v test
+
+echo "=== UNSAFE DROP IMPLS (Rudra pattern) ==="
+grep -rn "impl.*Drop" src/ | grep -v test
+
+echo "=== FFI / EXTERN ==="
+grep -rn "extern \"C\"\|#\[no_mangle\]\|c_char\|c_void" src/ | grep -v test
+```
 
 ### **Step 7.1: Rust-Specific Finding Template**
 ```markdown
@@ -649,6 +1191,32 @@ Ask these questions before reporting:
 6. Does the protocol assume this risk and document it?
 7. Is this by design? (e.g., admin powers, known limitations)
 8. Is the panic in a query (not execute) path? (queries can panic safely in some frameworks)
+```
+
+### **Step 9.2b: Solana-Specific False Positive Filters**
+Critical checks to prevent over-reporting on Solana programs:
+
+```markdown
+1. **Anchor auto-validation**: `Account<'info, T>` automatically checks owner + discriminator.
+   Don't report missing owner check if the struct uses `Account<'info, T>`.
+2. **Anchor Signer type**: `Signer<'info>` automatically validates `is_signer`.
+   Don't report missing signer check if the struct uses `Signer<'info>`.
+3. **Anchor Program type**: `Program<'info, Token>` validates the program ID.
+   Don't report arbitrary CPI if `Program<'info, T>` is used.
+4. **Anchor seeds + bump**: `#[account(seeds = [...], bump)]` validates canonical PDA.
+   Don't report PDA issues if Anchor's `seeds` constraint is used.
+5. **overflow-checks = true**: If `Cargo.toml` has `[profile.release] overflow-checks = true`,
+   the compiler traps arithmetic overflow. x-ray skips overflow checks for these programs.
+6. **Account names starting with `_`**: x-ray ignores accounts prefixed with `_` or `_no_check`.
+   These are intentionally unvalidated — flag only if security-critical.
+7. **Query/view functions**: On Solana, view functions still execute instructions — 
+   panics in view functions ARE a concern (unlike CosmWasm queries).
+8. **PDA init with `init` constraint**: Anchor's `init` constraint handles initialization +
+   rent payment atomically — don't report reinitialization for these.
+9. **has_one constraint**: `#[account(has_one = authority)]` validates the relationship —
+   don't duplicate report with missing signer check if `has_one` + `Signer` are both used.
+10. **CpiContext safe methods**: Anchor's `anchor_spl::token::transfer()`, `mint_to()`, `burn()`
+    are type-safe CPI wrappers — don't flag as arbitrary CPI.
 ```
 
 ### **Step 9.3: Impact Assessment**
@@ -1008,6 +1576,183 @@ pub struct Withdraw<'info> {
 ```
 **Tool Detection**: Trail of Bits lint `missing-signer-check`
 
+#### Pattern S5: Account Reloading After CPI ⚠️ HIGH
+**Description**: Accounts passed to CPI become stale. Using them without `.reload()` reads pre-CPI data. [SF-10]
+
+```rust
+// VULNERABLE: Stale data after CPI
+let cpi_ctx = CpiContext::new(program, accounts);
+anchor_spl::token::transfer(cpi_ctx, amount)?;
+let balance = ctx.accounts.vault.amount;  // STALE — still pre-transfer value!
+
+// SECURE: Reload after CPI
+anchor_spl::token::transfer(cpi_ctx, amount)?;
+ctx.accounts.vault.reload()?;  // Refresh from on-chain state
+let balance = ctx.accounts.vault.amount;  // Current value
+```
+**Tool Detection**: solana-fender `account_reloading`
+
+#### Pattern S6: Closing Accounts Without Cleanup ⚠️ MEDIUM
+**Description**: Zeroing lamports without setting discriminator + zeroing data allows reinitialization attacks. [SF-06]
+
+```rust
+// VULNERABLE: Close without cleanup
+**account.try_borrow_mut_lamports()? = 0;
+// Account can be found on-chain with zero lamports but valid data
+// Attacker re-funds and reinitializes
+
+// SECURE: Full close procedure
+let data = &mut account.try_borrow_mut_data()?;
+// 1. Set closed discriminator
+data[..8].copy_from_slice(&CLOSED_ACCOUNT_DISCRIMINATOR);
+// 2. Zero remaining data
+for byte in data[8..].iter_mut() { *byte = 0; }
+// 3. Then zero lamports
+**account.try_borrow_mut_lamports()? = 0;
+
+// ANCHOR: Use close constraint
+#[account(mut, close = user)]
+pub vault: Account<'info, VaultAccount>,  // Anchor handles full cleanup
+```
+**Tool Detection**: solana-fender `closing_accounts`
+
+#### Pattern S7: Duplicate Mutable Accounts ⚠️ MEDIUM
+**Description**: Two `Account<'info>` fields without key-inequality constraint allow passing the same account twice. [SF-07]
+
+```rust
+// VULNERABLE: No constraint preventing same account
+#[derive(Accounts)]
+pub struct Transfer<'info> {
+    #[account(mut)]
+    pub from: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to: Account<'info, TokenAccount>,
+    // Attacker passes from == to → self-transfer doubles balance
+}
+
+// SECURE: Add key inequality constraint
+#[derive(Accounts)]
+pub struct Transfer<'info> {
+    #[account(mut)]
+    pub from: Account<'info, TokenAccount>,
+    #[account(mut, constraint = from.key() != to.key())]
+    pub to: Account<'info, TokenAccount>,
+}
+```
+**Tool Detection**: solana-fender `duplicate_mutable_accounts`
+
+#### Pattern S8: Type Cosplay (Account Confusion) ⚠️ HIGH
+**Description**: Deserializing Borsh data without discriminator check allows type confusion — any account with matching size can masquerade as another type. [SVE-1010/1011, SF-03]
+
+```rust
+// VULNERABLE: No discriminator validation
+let user = User::try_from_slice(&account.data.borrow())?;
+// If Vault struct has same byte layout as User, attacker can pass a Vault account as User!
+
+// SECURE: Check discriminator after deserialization
+let user = User::try_from_slice(&account.data.borrow())?;
+if user.discriminant != AccountDiscriminant::User {
+    return Err(ErrorCode::InvalidAccountType.into());
+}
+
+// ANCHOR: Use #[account] — Anchor auto-adds 8-byte discriminator
+#[account]
+pub struct User {
+    pub authority: Pubkey,
+    pub balance: u64,
+}
+// Anchor automatically validates discriminator on deserialization
+```
+**Tool Detection**: x-ray SVE-1010/1011, solana-fender `type_cosplay`
+
+#### Pattern S9: Seed Collision ⚠️ MEDIUM
+**Description**: PDA seeds without a unique hardcoded string prefix can collide across program address types. [SF-19]
+
+```rust
+// VULNERABLE: No static prefix — two PDA types could collide
+#[account(seeds = [user.key().as_ref(), vault.key().as_ref()], bump)]
+pub pda_a: Account<'info, TypeA>,
+
+#[account(seeds = [user.key().as_ref(), vault.key().as_ref()], bump)]
+pub pda_b: Account<'info, TypeB>,
+// Same seeds → same PDA → type confusion!
+
+// SECURE: Unique string prefix per PDA type
+#[account(seeds = [b"type_a", user.key().as_ref()], bump)]
+pub pda_a: Account<'info, TypeA>,
+
+#[account(seeds = [b"type_b", user.key().as_ref()], bump)]
+pub pda_b: Account<'info, TypeB>,
+```
+**Tool Detection**: solana-fender `seed_collision`
+
+#### Pattern S10: Precision Loss (Division Before Multiplication) ⚠️ MEDIUM
+**Description**: Integer division truncates — dividing before multiplying loses precision. [SF-17, SVE-2004]
+
+```rust
+// VULNERABLE: Division truncates intermediate value
+let result = (amount / x) * y;  // If amount=7, x=3, y=2 → (2)*2=4 (should be ~4.67)
+let result = amount.checked_div(x)?.checked_mul(y)?;  // Same truncation issue
+
+// SECURE: Multiply first, then divide
+let result = (amount * y) / x;  // 7*2/3 = 14/3 = 4 (closer to correct)
+let result = amount.checked_mul(y)?.checked_div(x)?;
+
+// For fee calculations: use ceiling division
+let fee = (amount * fee_rate + DENOMINATOR - 1) / DENOMINATOR;  // Round up
+```
+**Tool Detection**: solana-fender `precision_loss`, x-ray SVE-2004
+
+#### Pattern S11: Insecure Randomness ⚠️ MEDIUM
+**Description**: On-chain data (`Clock`, `SlotHashes`) is validator-manipulable and must not be used for security-critical randomness. [SF-13]
+
+```rust
+// VULNERABLE: Predictable/manipulable randomness
+let clock = Clock::get()?;
+let random = clock.unix_timestamp % 100;  // Validator can manipulate unix_timestamp
+let random = clock.slot % 256;             // Slot is predictable
+
+// ALSO VULNERABLE: SlotHashes and RecentBlockhashes
+// These sysvars are on-chain-observable before transaction execution
+
+// SECURE: Use verifiable random function (VRF)
+// Switchboard VRF
+let vrf_result = ctx.accounts.vrf.get_result()?;
+// Chainlink VRF
+// Pyth Entropy
+```
+**Tool Detection**: solana-fender `insecure_randomness`
+
+#### Pattern S12: Initialization Frontrunning ⚠️ MEDIUM
+**Description**: Global singleton PDAs with static seeds (`b"config"`) can be frontrun — anyone can call `initialize` first. [SF-12]
+
+```rust
+// VULNERABLE: No authority constraint on global init
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(init, payer = signer, seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+// Anyone can call initialize and become the config authority!
+
+// SECURE: Validate deployer authority
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(init, payer = signer, seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
+    #[account(mut, constraint = signer.key() == program_data.upgrade_authority.unwrap())]
+    pub signer: Signer<'info>,
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
+    pub program: Program<'info, MyProgram>,
+    pub program_data: Account<'info, ProgramData>,
+    pub system_program: Program<'info, System>,
+}
+```
+**Tool Detection**: solana-fender `initialization_frontrunning`
+
 ---
 
 ### **Substrate-Specific Detection Patterns**
@@ -1115,7 +1860,250 @@ pub fn claim(origin: OriginFor<T>) -> DispatchResult {
 
 ---
 
-## 🎯 **Final Pro Tips (Rust Edition)**
+### **General Rust Safety Detection Patterns (Awesome-Rust-Checker)**
+
+> These patterns are sourced from academic Rust static analyzers (Rudra, lockbud, RAPx, rCanary, MIRAI)
+> and provide detection patterns for memory safety, concurrency, and unsafe code bugs applicable to ALL Rust codebases.
+
+#### Pattern RUST1: Unsound Send/Sync on Generic Types ⚠️ CRITICAL (Rudra)
+**Description**: `unsafe impl Send/Sync` for generic wrappers without bounding type parameters allows data races. Rudra found 76 CVEs from this pattern alone.
+
+```rust
+// VULNERABLE: T is not bounded by Send — data race if T contains Rc<Cell<_>>
+struct Wrapper<T> { inner: T }
+unsafe impl<T> Send for Wrapper<T> {}  // Rudra: SendSyncVariance Error
+unsafe impl<T> Sync for Wrapper<T> {}  // Rudra: SendSyncVariance Error
+
+// SECURE: Bound T appropriately
+unsafe impl<T: Send> Send for Wrapper<T> {}
+unsafe impl<T: Send + Sync> Sync for Wrapper<T> {}
+
+// EDGE CASE: Concurrent queue pattern — impl Sync needs T: Send (not T: Sync)
+// If the container only moves T in/out (never exposes &T), T: Send suffices for Sync
+```
+**Tool Detection**: Rudra `SendSyncVariance`, severity Error (API_SEND_FOR_SYNC, RELAX_SEND)
+
+#### Pattern RUST2: Panic Safety in Unsafe Code ⚠️ HIGH (Rudra)
+**Description**: Unsafe lifetime-bypassing operations followed by generic function calls that may panic cause double-free or uninitialized memory access.
+
+```rust
+// VULNERABLE: set_len before elements are initialized — if clone() panics, uninitialized memory is exposed
+unsafe {
+    vec.set_len(vec.len() + count);  // Length extended before writing
+    for (i, x) in items.iter().enumerate() {
+        vec.as_mut_ptr().offset(i as isize).write(x.clone()); // clone() can panic!
+    }
+}
+// If clone() panics at index 3, indices 3..count contain uninitialized memory
+// When vec is dropped, Drop runs on garbage → UB
+
+// SECURE: Write elements first, then extend length
+unsafe {
+    let base = vec.as_mut_ptr().add(vec.len());
+    for (i, x) in items.iter().enumerate() {
+        base.add(i).write(x.clone());
+    }
+    vec.set_len(vec.len() + count);  // Only after all writes succeed
+}
+```
+**Tool Detection**: Rudra `UnsafeDataflow` — set_len = Error, ptr::read = Warning, transmute = Info
+
+#### Pattern RUST3: Self-Deadlock (DoubleLock) ⚠️ HIGH (lockbud)
+**Description**: Acquiring a lock while already holding the same lock on a single thread causes immediate deadlock.
+
+```rust
+// VULNERABLE: Mutex re-entry — thread blocks forever
+fn process(data: &Mutex<State>) {
+    let state = data.lock().unwrap();
+    if state.needs_update {
+        let state2 = data.lock().unwrap();  // DEADLOCK — already holding lock
+    }
+}
+
+// VULNERABLE: Lock acquired in match arm while held
+let guard = mutex.lock().unwrap();
+match *guard {
+    Mode::A => { mutex.lock().unwrap(); }  // DEADLOCK
+    _ => {}
+}
+
+// SECURE: Release lock before re-acquiring
+fn process(data: &Mutex<State>) {
+    let needs_update = { data.lock().unwrap().needs_update };  // Lock released
+    if needs_update {
+        let mut state = data.lock().unwrap();  // Safe — first lock released
+        state.update();
+    }
+}
+```
+**Tool Detection**: lockbud `-k deadlock`, confidence Probably/Possibly
+
+#### Pattern RUST4: Lock-Order Inversion (ConflictLock) ⚠️ HIGH (lockbud)
+**Description**: Two code paths acquiring the same pair of locks in opposite order creates a potential mutual deadlock.
+
+```rust
+// VULNERABLE: Opposite lock ordering across functions
+fn transfer_a_to_b(a: &Mutex<_>, b: &Mutex<_>) {
+    let _ga = a.lock(); let _gb = b.lock();  // Order: a → b
+}
+fn transfer_b_to_a(a: &Mutex<_>, b: &Mutex<_>) {
+    let _gb = b.lock(); let _ga = a.lock();  // Order: b → a — DEADLOCK RISK
+}
+
+// SECURE: Establish consistent lock ordering
+fn transfer(first: &Mutex<_>, second: &Mutex<_>) {
+    let id_first = first as *const _ as usize;
+    let id_second = second as *const _ as usize;
+    if id_first < id_second {
+        let _g1 = first.lock(); let _g2 = second.lock();
+    } else {
+        let _g1 = second.lock(); let _g2 = first.lock();
+    }
+}
+```
+**Tool Detection**: lockbud `-k deadlock` (ConflictLock cycle detection)
+
+#### Pattern RUST5: Atomic TOCTOU Race ⚠️ MEDIUM (lockbud)
+**Description**: Check-then-act on atomic variables without a single atomic RMW operation enables time-of-check/time-of-use races.
+
+```rust
+// VULNERABLE: Load-check-store is NOT atomic
+if counter.load(Ordering::SeqCst) < MAX {
+    counter.store(counter.load(Ordering::SeqCst) + 1, Ordering::SeqCst);
+    // Another thread could modify counter between load and store!
+}
+
+// SECURE: Use atomic compare-exchange
+loop {
+    let current = counter.load(Ordering::SeqCst);
+    if current >= MAX { break; }
+    match counter.compare_exchange(current, current + 1, Ordering::SeqCst, Ordering::SeqCst) {
+        Ok(_) => break,
+        Err(_) => continue,  // Retry on contention
+    }
+}
+// OR: counter.fetch_add(1, Ordering::SeqCst)
+```
+**Tool Detection**: lockbud `-k atomicity_violation`, confidence Possibly
+
+#### Pattern RUST6: Use-After-Free via Raw Pointer ⚠️ CRITICAL (lockbud/RAPx)
+**Description**: Raw pointer used or escaping after its pointee has been dropped.
+
+```rust
+// VULNERABLE: Raw ptr escapes to global after pointee drop
+static mut GLOBAL: *const String = std::ptr::null();
+fn init() {
+    let s = String::from("hello");
+    unsafe { GLOBAL = &s as *const String; }
+    // s dropped here — GLOBAL is dangling!
+}
+
+// VULNERABLE: Raw ptr returned from function with local pointee
+fn danger() -> *const Vec<u8> {
+    let v = vec![1, 2, 3];
+    &v as *const Vec<u8>  // v dropped → dangling pointer returned
+}
+
+// SECURE: Ensure pointee outlives pointer usage
+fn safe() -> Box<Vec<u8>> {
+    Box::new(vec![1, 2, 3])  // Heap-allocated, ownership transferred to caller
+}
+```
+**Tool Detection**: lockbud `-k memory` (UseAfterFree), RAPx `-F` (SafeDrop)
+
+#### Pattern RUST7: Invalid Free (Uninitialized Memory Drop) ⚠️ CRITICAL (lockbud)
+**Description**: Dropping a value created from `MaybeUninit::assume_init()` without prior `.write()` frees garbage pointers.
+
+```rust
+// VULNERABLE: assume_init without write — drop will free garbage
+let val: Vec<i32> = unsafe { MaybeUninit::uninit().assume_init() };
+// val is dropped → Vec tries to free garbage internal pointer → UB
+
+// VULNERABLE: Deprecated mem::uninitialized
+let val: String = unsafe { std::mem::uninitialized() };
+// val is dropped → String tries to free garbage pointer → UB
+
+// SECURE: Write before assuming init
+let mut uninit = MaybeUninit::<Vec<i32>>::uninit();
+uninit.write(Vec::new());           // Initialize first
+let val = unsafe { uninit.assume_init() };  // Now safe to use and drop
+```
+**Tool Detection**: lockbud `-k memory` (InvalidFree), checks for `.write()` on all CFG paths
+
+#### Pattern RUST8: Memory Leak via Ownership Escape ⚠️ MEDIUM (rCanary/RAPx)
+**Description**: Heap-allocated values that escape OBRM (Ownership-Based Resource Management) via ManuallyDrop, into_raw, or mem::forget are never freed.
+
+```rust
+// VULNERABLE: Box::into_raw without matching from_raw
+let buf = Box::new([0u8; 4096]);
+let ptr = Box::into_raw(buf);  // Ownership goes to raw ptr
+// ptr is stored but never passed to Box::from_raw() → LEAK
+
+// VULNERABLE: ManuallyDrop prevents automatic cleanup
+let data = ManuallyDrop::new(Box::new(expensive_data));
+// data is never manually dropped → LEAK
+
+// VULNERABLE: Proxy type without Drop impl
+struct Buffer { ptr: *mut u8, len: usize }
+// Buffer.ptr allocated via alloc() but Buffer has no Drop impl → LEAK
+
+// SECURE: Ensure cleanup path exists
+let ptr = Box::into_raw(buf);
+// ... use ptr ...
+let _ = unsafe { Box::from_raw(ptr) };  // Reclaim ownership, drop frees memory
+
+// SECURE: Proxy type with Drop
+impl Drop for Buffer {
+    fn drop(&mut self) {
+        unsafe { std::alloc::dealloc(self.ptr, Layout::from_size_align(self.len, 1).unwrap()); }
+    }
+}
+```
+**Tool Detection**: rCanary/RAPx `-M` (6 leak pattern categories), Z3-based ownership tracking
+
+#### Pattern RUST9: Unsafe Destructor ⚠️ MEDIUM (Rudra)
+**Description**: Non-FFI unsafe function calls inside `Drop::drop()` implementations may cause double-free, UAF, or other UB if the destructor logic is unsound.
+
+```rust
+// FLAGGED: Unsafe call in Drop (Rudra: UnsafeDestructor Warning)
+// RUSTSEC-2020-0032 pattern
+impl Drop for MyHandle {
+    fn drop(&mut self) {
+        unsafe {
+            CString::from_raw(self.ptr as *mut c_char);  // Takes ownership of ptr
+            // If self.ptr was already freed or invalid → double-free / UAF
+        }
+    }
+}
+
+// AUDIT CHECKLIST for unsafe Drop:
+// - Is the pointer guaranteed valid at drop time?
+// - Can the destructor run twice (via ManuallyDrop)?
+// - Is the pointer aliased elsewhere?
+// - Could panic unwind cause partial drop + re-drop?
+```
+**Tool Detection**: Rudra `UnsafeDestructor` (Warning level), filters out FFI-only `extern` calls
+
+#### Pattern RUST10: Timing Side Channel ⚠️ HIGH (MIRAI)
+**Description**: Secret data influencing branch conditions leaks information via execution time differences.
+
+```rust
+// VULNERABLE: Early return on mismatch leaks position of first wrong byte
+fn verify_mac(expected: &[u8], actual: &[u8]) -> bool {
+    if expected.len() != actual.len() { return false; }
+    for i in 0..expected.len() {
+        if expected[i] != actual[i] { return false; }  // Timing leak!
+    }
+    true
+}
+
+// SECURE: Constant-time comparison
+fn verify_mac_ct(expected: &[u8], actual: &[u8]) -> bool {
+    use subtle::ConstantTimeEq;
+    expected.ct_eq(actual).into()  // No early return — constant time
+}
+```
+**Tool Detection**: MIRAI `--constant_time SecretTag` + `add_tag!(&key, SecretTaint)`
 
 1. **Start with the money**: Follow the value flow first — deposits, withdrawals, transfers, minting, burning
 2. **Think like a Rustacean attacker**: What inputs cause panics? What arithmetic overflows? What ownership violations?
@@ -1146,4 +2134,29 @@ pub fn claim(origin: OriginFor<T>) -> DispatchResult {
 - [ ] Error paths traced for state corruption
 - [ ] Framework-specific checklist completed
 - [ ] Known exploit patterns checked against codebase
+
+## Solana-Specific Completion Checklist:
+- [ ] All 19 solana-fender analyzer categories reviewed
+- [ ] x-ray SVE scan completed (if LLVM toolchain available)
+- [ ] OWASP Solana Top 10 categories cross-referenced
+- [ ] All Account structs reviewed for Signer/Account/Program types
+- [ ] All CPI calls validated for program ID checks
+- [ ] All PDA derivations use canonical bumps
+- [ ] All account closures zero discriminator + data
+- [ ] Accounts reloaded after CPI before reuse
+- [ ] No insecure randomness sources in security-critical paths
+- [ ] Instruction introspection uses relative indexing
+
+## General Rust Safety Completion Checklist (Awesome-Rust-Checker):
+- [ ] All `unsafe impl Send/Sync` for generics checked for bound correctness (Rudra)
+- [ ] All `unsafe` blocks reviewed for panic-safety (generic calls after lifetime bypass)
+- [ ] All `Drop` impls with unsafe code audited for soundness (Rudra)
+- [ ] Concurrency primitives checked for deadlock potential (lockbud)
+- [ ] Atomic variables checked for TOCTOU patterns (lockbud)
+- [ ] Raw pointer lifetimes verified — no UAF, no dangling (lockbud/RAPx)
+- [ ] MaybeUninit usage checked for write-before-assume_init (lockbud)
+- [ ] ManuallyDrop/Box::into_raw have matching cleanup paths (rCanary)
+- [ ] Custom containers with raw ptrs have Drop impls (rCanary)
+- [ ] Crypto operations verified for constant-time behavior (MIRAI)
+- [ ] Panic reachability assessed for critical paths (MIRAI/lockbud)
 ```
