@@ -1,0 +1,9 @@
+{
+  "name": "docs-for-humans-and-ai",
+  "version": "1.0.0",
+  "description": "Write and maintain documentation that serves both human readers and AI agents equally well. Based on Cyfrin claude-docs-prompts patterns adapted for security audit frameworks.",
+  "author": {
+    "name": "Brett",
+    "url": "https://github.com/Cyfrin/claude-docs-prompts"
+  }
+}

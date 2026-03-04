@@ -1,6 +1,6 @@
 # Solidity/EVM Audit Framework
 
-> **Version:** 3.0 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, and OWASP SC Top 10 (2025)
+> **Version:** 3.1 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), and **[Pashov Audit Group](https://github.com/pashov/skills) 170-vector parallelized scan**
 > **Ecosystem:** Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)
 
 ---
@@ -27,6 +27,18 @@ Version 3.0 integrates knowledge from [evmresearch.io](https://evmresearch.io), 
 - **DeFi Protocol Mechanics** — Liquidation taxonomy (5 mechanisms), governance, restaking, RWA, perpetual DEXs
 - **Formal Verification Epistemology** — Tool selection strategy, 60% ceiling insight
 
+### Version 3.1 — Pashov Audit Group Skills Integration
+
+Version 3.1 integrates [Pashov Audit Group's open-source audit skills](https://github.com/pashov/skills), a parallelized agentic scan system built by one of the leading independent smart contract auditors. Key additions:
+
+- **170 Atomic Attack Vectors** — Comprehensive vector library split across 4 files, each with Detection (D) and False Positive (FP) descriptions
+- **Parallelized Agent Architecture** — 4 vector-scan agents (Sonnet) + 1 adversarial reasoning agent (Opus) running concurrently
+- **FP Gate (3 Checks)** — Concrete execution path, reachable entry point, no existing guard — eliminates false positives before reporting
+- **Confidence Scoring** — Start at 100, deduct for privileged caller (-25), partial path (-20), self-contained impact (-15); threshold at 75
+- **Cross-Chain & LayerZero Vectors** — 18 dedicated vectors for bridge, messaging, and cross-chain composability
+- **Bundle File Approach** — Merged codebase scanning with triage pass (Skip/Borderline/Survive) then deep pass
+- **Phase 0 Integration** — Pashov scan runs before existing Phase 1 Exploration, feeding high-confidence findings into the Hypothesis Generator
+
 ### QuillAudits Claude Skills V1 Integration (v2.1+)
 Patterns from [QuillAudits open-source Claude Skills](https://github.com/quillai-network/qs_skills) are generalized and integrated:
 - **Semantic Guard Analysis** — Usage graph of `require`/modifier checks; Consistency Principle for gap detection
@@ -46,12 +58,13 @@ Patterns from [QuillAudits open-source Claude Skills](https://github.com/quillai
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| [CommandInstruction.md](CommandInstruction.md) | ~180 | System prompt — binding rules, validation checks, auditor's mindset (10 lenses) |
-| [audit-workflow1.md](audit-workflow1.md) | ~1100 | Manual audit methodology — 7 phases, 11 attack categories, 40+ known exploits, AA/CPIMP/L2/transient storage |
+| [CommandInstruction.md](CommandInstruction.md) | ~200 | System prompt — binding rules, validation checks, auditor's mindset (10 lenses) |
+| [audit-workflow1.md](audit-workflow1.md) | ~1150 | Manual audit methodology — 7 phases, 11 attack categories, 40+ known exploits, AA/CPIMP/L2/transient storage, Pashov 170-vector cross-reference |
 | [audit-workflow2.md](audit-workflow2.md) | ~620 | Semantic phase analysis — SNAPSHOT→ACCOUNTING→VALIDATION→MUTATION→COMMIT + Phase 8: Specification Completeness |
-| [Audit_Assistant_Playbook.md](Audit_Assistant_Playbook.md) | ~1800 | Conversation structure — 10 sections, 17+ SCAN prompts covering the full audit lifecycle |
+| [Audit_Assistant_Playbook.md](Audit_Assistant_Playbook.md) | ~1960 | Conversation structure — 10 sections, 19 SCAN prompts, Pashov Parallelized Scan agent |
+| [pashov-skills/](pashov-skills/) | ~700 | Pashov Audit Group integration — 170 attack vectors, FP gates, confidence scoring, agent instructions |
 
-**Total: ~3,700 lines**
+**Total: ~4,630 lines**
 
 ---
 
@@ -101,12 +114,13 @@ The Audit_Assistant_Playbook provides 10 structured sections for the full audit 
 |---|---------|---------|
 | 1 | Build Layer | Prepare `merged.txt` with all in-scope code |
 | 2 | Main Chat Prompts | 4 AUDIT AGENT roles (Protocol Mapper, Hypothesis Generator, Code Path Explorer, Adversarial Reviewer) |
+| 2.5 | Pashov Parallelized Scan | 5-agent parallelized triage using 170 attack vectors with FP gates and confidence scoring |
 | 3 | Exploration Chat | Understanding protocol design before security analysis |
 | 4 | Working Chat | Deep-dive analysis of surviving hypotheses |
 | 5 | Finding Drafting | Triage-friendly report preparation |
 | 6 | Scope Index | Navigational artifact for manual code review |
 | 7 | Review Mode | Completeness and correctness check of reasoning |
-| 8 | SCAN Chats | 17 signal generators (Paranoid, Access Lifecycle, Accounting, Low-Noise, Guard Consistency, Invariant Detection, Reentrancy, External Call Safety, Proxy/Upgrade, **Account Abstraction, CPIMP, Transient Storage, L2/Cross-Chain, Token Integration Deep, Compiler/Spec Completeness, Governance, Liquidation/DeFi Economics**) |
+| 8 | SCAN Chats | 19 signal generators (Paranoid, Access Lifecycle, Accounting, Low-Noise, Guard Consistency, Invariant Detection, Reentrancy, External Call Safety, Proxy/Upgrade, Account Abstraction, CPIMP, Transient Storage, L2/Cross-Chain, Token Integration Deep, Compiler/Spec Completeness, Governance, Liquidation/DeFi Economics, **Pashov 170-Vector Triage, Pashov Cross-Chain Deep Dive**) |
 | 9 | Hypotheses Formulation | Transform vague intuitions into testable hypotheses |
 | 10 | Scope Transfer | Context packaging for moving to new chats |
 
@@ -180,10 +194,11 @@ Pre-built attack checklists for:
 
 1. **Build** `merged.txt` using the command in [Playbook Section 1](Audit_Assistant_Playbook.md#1-build-layer)
 2. **Set** the system prompt from [CommandInstruction.md](CommandInstruction.md)
-3. **Map** the protocol with `[AUDIT AGENT: Protocol Mapper]`
-4. **Generate** hypotheses with `[AUDIT AGENT: Attack Hypothesis Generator]`
-5. **Validate** each hypothesis with `[AUDIT AGENT: Code Path Explorer]`
-6. **Draft** confirmed findings using the [Finding Template](audit-workflow1.md#step-61-finding-template)
+3. **(Optional) Fast Scan** — Run Pashov Parallelized Scan with `[AUDIT AGENT: Pashov Parallelized Scan]` for automated triage
+4. **Map** the protocol with `[AUDIT AGENT: Protocol Mapper]`
+5. **Generate** hypotheses with `[AUDIT AGENT: Attack Hypothesis Generator]` (merge Pashov findings if run)
+6. **Validate** each hypothesis with `[AUDIT AGENT: Code Path Explorer]`
+7. **Draft** confirmed findings using the [Finding Template](audit-workflow1.md#step-61-finding-template)
 
 ---
 
@@ -192,6 +207,7 @@ Pre-built attack checklists for:
 | Resource | Purpose |
 |----------|---------|
 | [evmresearch.io](https://evmresearch.io) | Structured knowledge graph — 300+ notes across EVM internals, vulnerability patterns, exploit analyses, security patterns, protocol mechanics, Solidity behaviors |
+| [Pashov Audit Group Skills](https://github.com/pashov/skills) | Open-source parallelized audit system — 170 attack vectors, confidence scoring, 5-agent architecture |
 | [report-writing.md](../report-writing.md) | How to write findings that communicate with judges |
 | [VULNERABILITY_PATTERNS_INTEGRATION.md](../VULNERABILITY_PATTERNS_INTEGRATION.md) | ClaudeSkills pattern integration status across all frameworks |
 | [QuillAudits Claude Skills V1](https://github.com/quillai-network/qs_skills) | Open-source AI audit plugins (MIT licensed) — 10 specialized skills |
@@ -199,5 +215,18 @@ Pre-built attack checklists for:
 
 ---
 
-**Framework Version:** 3.0
+## AI Context
+
+| Artifact | Purpose |
+|----------|---------|
+| [CLAUDE.md](CLAUDE.md) | AI agent context for this framework — structure, lenses, editing rules |
+| [../llms.txt](../llms.txt) | AI page index (regenerate with `../scripts/build-llms-txt.sh`) |
+| [../llms-full.txt](../llms-full.txt) | Full concatenated content for AI ingestion |
+| [CommandInstruction.md](CommandInstruction.md) | Use directly as LLM system prompt |
+
+Documentation follows the [docs-for-humans-and-ai](../ClaudeSkills/plugins/docs-for-humans-and-ai/) standard adapted from [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts).
+
+---
+
+**Framework Version:** 3.1
 **Last Updated:** February 2026

@@ -23,40 +23,55 @@ Without this architecture, the LLM treats methodology as optional. With it, the 
 ```
 audit-assistant-playbook/
 ├── README.md                              <- This file
+├── CLAUDE.md                              <- AI agent context (docs-for-humans-and-ai)
 ├── report-writing.md                      <- Universal report writing guide
 ├── VULNERABILITY_PATTERNS_INTEGRATION.md  <- ClaudeSkills integration status
+├── llms.txt                               <- AI index (page list + descriptions)
+├── llms-full.txt                          <- AI ingest (full concatenated content)
 │
 ├── SolidityEVM/                           <- Solidity/EVM Framework (Benchmark)
-│   ├── Audit_Assistant_Playbook.md        <- Conversation structure & prompts (Sections 1–10)
+│   ├── CLAUDE.md                          <- AI agent context for this ecosystem
+│   ├── Audit_Assistant_Playbook.md        <- Conversation structure & prompts (Sections 1–10, 19 SCANs)
 │   ├── CommandInstruction.md              <- System prompt (binding architecture)
-│   ├── audit-workflow1.md                 <- Manual audit methodology
-│   └── audit-workflow2.md                 <- Semantic phase analysis
+│   ├── audit-workflow1.md                 <- Manual audit methodology + Pashov 170-vector cross-ref
+│   ├── audit-workflow2.md                 <- Semantic phase analysis
+│   └── pashov-skills/                     <- Pashov Audit Group integration
+│       ├── README.md                      <- Integration overview
+│       ├── finding-validation.md          <- FP gate + confidence scoring
+│       ├── report-formatting.md           <- Output template
+│       ├── agents/                        <- Vector-scan + adversarial agent instructions
+│       └── attack-vectors/                <- 170 atomic attack vectors (4 files)
 │
 ├── RustBaseSmartContract/                 <- Rust Framework (CosmWasm / Solana / Substrate)
+│   ├── CLAUDE.md
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Rust.md   <- Sections 1–10
-│   ├── CommandInstruction-Rust.md         <- Binding architecture + 6 Rust lenses
-│   └── Rust-Smartcontract-workflow.md     <- Methodology + ClaudeSkills Solana/Substrate patterns
+│   ├── CommandInstruction-Rust.md         <- Binding architecture + Rust lenses
+│   └── Rust-Smartcontract-workflow.md     <- Methodology + ClaudeSkills + SSB patterns
 │
 ├── Go-SmartContract/                      <- Go Framework (Cosmos SDK / IBC / CometBFT)
+│   ├── CLAUDE.md
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Go.md     <- Sections 1–10
 │   ├── CommandInstruction-Go.md           <- Binding architecture + 8 Go/Cosmos lenses
-│   └── Go-Smart-Contract-Audit-Methodology.md <- Methodology + ClaudeSkills C1–C6 + ABCI++ patterns
+│   └── Go-Smart-Contract-Audit-Methodology.md <- Methodology + ClaudeSkills C1–C6 + ABCI++
 │
 ├── Cosmos-SDK/                            <- Cosmos SDK Framework (advanced chain-level)
+│   ├── CLAUDE.md
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Cosmos.md <- Sections 1–10
 │   ├── CommandInstruction-Cosmos.md       <- Binding architecture + Cosmos-specific lenses
-│   └── Cosmos-SDK-Security-Audit-Methodology.md <- Methodology + governance/consensus/IBC patterns
+│   └── Cosmos-SDK-Security-Audit-Methodology.md <- Methodology + governance/consensus/IBC
 │
 ├── Cairo-StarkNet/                        <- Cairo Framework (StarkNet L2)
+│   ├── CLAUDE.md
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Cairo.md  <- Sections 1–10
 │   ├── CommandInstruction-Cairo.md        <- Binding architecture + 6 Cairo lenses
 │   └── Cairo-Audit-Methodology.md         <- Methodology + ClaudeSkills Cairo patterns
 │
 ├── Algorand-PyTeal/                       <- Algorand Framework (PyTeal / TEAL)
+│   ├── CLAUDE.md
 │   ├── README.md
 │   ├── Audit_Assistant_Playbook_Algorand.md <- Sections 1–10
 │   ├── CommandInstruction-Algorand.md     <- Binding architecture + 6 Algorand lenses
@@ -64,12 +79,16 @@ audit-assistant-playbook/
 │
 └── ClaudeSkills/                          <- Trail of Bits vulnerability patterns (submodule)
     └── plugins/building-secure-contracts/skills/
-        ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
-        ├── cosmos-vulnerability-scanner/   <- Integrated → Go Framework
-        ├── substrate-vulnerability-scanner/<- Integrated → Rust Framework
-        ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
-        ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
-        └── ton-vulnerability-scanner/      <- Available (no framework yet)
+    │   ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
+    │   ├── cosmos-vulnerability-scanner/   <- Integrated → Go Framework
+    │   ├── substrate-vulnerability-scanner/<- Integrated → Rust Framework
+    │   ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
+    │   ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
+    │   └── ton-vulnerability-scanner/      <- Available (no framework yet)
+    └── plugins/docs-for-humans-and-ai/    <- Documentation standard (Cyfrin)
+        └── skills/docs-for-humans-and-ai/
+            ├── SKILL.md                   <- Dual-audience formatting + Diataxis
+            └── resources/                 <- Cyfrin claude-docs-prompts reference
 ```
 
 ## Framework Overview
@@ -86,7 +105,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 
 | Framework | Lines | Sections | ClaudeSkills Patterns | Ecosystem Lenses |
 |-----------|-------|----------|----------------------|-----------------|
-| **Solidity/EVM** | ~3,912 | 1–10 | Benchmark + QuillAudits V1 + evmresearch.io | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline, specification completeness, compiler trust boundary, account abstraction awareness |
+| **Solidity/EVM** | ~4,630 | 1–10 | Benchmark + QuillAudits V1 + evmresearch.io + Pashov 170-vector | Value flow, adversarial thinking, historical awareness, guard consistency, invariant awareness, OWASP coverage, time discipline, specification completeness, compiler trust boundary, account abstraction awareness |
 | **Rust** | ~3,400+ | 1–10 | Solana + Substrate + Awesome-Rust-Checker (Rudra/lockbud/RAPx/rCanary/MIRAI) + Safe Solana Builder (Frank Castle, SSB1–SSB8) | Ownership tracking, unsafe hunting, panic safety, cross-contract, state consistency, arithmetic, Send/Sync soundness, concurrency, memory safety, verification, CPI safety surface, Curiosity Principle |
 | **Go/Cosmos** | ~3,700+ | 1–10 | Cosmos C1–C6 + ABCI++ | Pointer hunting, error paranoia, zero value, module boundary, state consistency, economic surface, ABCI++ lifecycle, tx structure |
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
@@ -100,6 +119,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | ClaudeSkills Scanner | Patterns | Integrated Into | Key Additions |
 |---------------------|----------|-----------------|---------------|
 | **QuillAudits V1 + evmresearch.io** | 10 skills + 300+ notes | Solidity/EVM Methodology + Playbook + CommandInstruction | Guard consistency, invariant detection, behavioral analysis, reentrancy variants, external call safety, proxy safety, signature replay, oracle/flash loan, input/arithmetic, DoS/griefing, OWASP SC Top 10 (2025), AA (ERC-4337/EIP-7702/ERC-7579), CPIMP, transient storage (EIP-1153), compiler trust boundary, L2/cross-chain, non-standard token DB (65.8% stat), 40+ exploit DB (2016–2025), specification completeness, formal verification epistemology |
+| **Pashov Audit Group** | 170 attack vectors, 5 agents | SolidityEVM Methodology + Playbook + CommandInstruction + pashov-skills/ | 170-vector parallelized scan, FP gate (3 checks), confidence scoring (100-point), cross-chain/LayerZero (18 vectors), adversarial reasoning agent, Phase 0 integration |
 | Solana | 670+ lines | Rust CommandInstruction + Methodology | CPI, PDA, ownership, signer checks |
 | Cosmos | 741+ lines | Go CommandInstruction + Methodology + Cosmos-SDK | GetSigners, non-determinism, ABCI panic/slow, bookkeeping, ABCI++ lifecycle, module integration, tx structure attacks |
 | Substrate | 792+ lines | Rust CommandInstruction + Methodology | Weights/fees, verify-first, unsigned validation |
@@ -107,6 +127,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
+| **docs-for-humans-and-ai** | Diataxis + llmstxt.org standard | All 7 CLAUDE.md files + llms.txt + llms-full.txt + build script | Dual-audience formatting, LOCAL CUSTOMIZATIONS marker, AI-consumable docs standard (Cyfrin claude-docs-prompts) |
 
 ## Key Concepts (Universal)
 
@@ -164,6 +185,20 @@ Every function in every ecosystem is classified by what it does:
 2. Use [CommandInstruction-Algorand.md](./Algorand-PyTeal/CommandInstruction-Algorand.md) as system prompt
 3. Follow [Algorand-Audit-Methodology.md](./Algorand-PyTeal/Algorand-Audit-Methodology.md)
 
+## AI Ingestibility
+
+This framework is designed for both human auditors and AI agents:
+
+| Artifact | Purpose | How to Generate |
+|----------|---------|----------------|
+| [CLAUDE.md](./CLAUDE.md) | AI agent project context | Maintained manually |
+| [llms.txt](./llms.txt) | Page index with descriptions | `./scripts/build-llms-txt.sh` |
+| [llms-full.txt](./llms-full.txt) | Full concatenated content (~24K lines) | `./scripts/build-llms-txt.sh` |
+| CommandInstruction files | LLM system prompts (binding rules) | Used directly as system prompt |
+| `merged.txt` (per-audit) | Concatenated in-scope code | Playbook Section 1 Build Layer |
+
+The `docs-for-humans-and-ai` ClaudeSkills plugin documents the writing standard. Based on [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts).
+
 ## Report Writing
 
 See [report-writing.md](./report-writing.md) for the universal report writing guide.
@@ -181,6 +216,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.0 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (all others)
+**Framework Version:** 3.1 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK)
 **Last Updated:** March 2026
 **License:** MIT

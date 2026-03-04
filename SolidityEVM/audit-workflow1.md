@@ -1,9 +1,10 @@
 # Smart Contract Audit Methodology - Manual Workflow
 
-> **Version:** 3.0 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, and 2024–2025 exploit database
+> **Version:** 3.1 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, 2024–2025 exploit database, and **Pashov Audit Group 170 Attack Vectors**
 > **Integration Note:** This file contains the audit *methodology* and heuristics.
 > For conversation structure, see `../Audit_Assistant_Playbook.md`.
 > For the system prompt, see `CommandInstruction.md`.
+> For the 170-vector parallelized scan, see `pashov-skills/README.md`.
 
 ---
 
@@ -578,6 +579,87 @@ Based on protocol type:
 - [ ] Off-chain legal wrapper failure beyond smart contract reach
 - [ ] Recovery agent burn-and-remint capability without multisig+timelock
 - [ ] ERC-3643 T-REX identity registry bypass
+
+### **Step 5.2b: Pashov 170-Vector Attack Surface (Parallelized Scan)**
+
+> **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — 170 atomic attack vectors with per-vector FP gates
+> **Reference Files:** `pashov-skills/attack-vectors/attack-vectors-{1,2,3,4}.md`
+> **Confidence Scoring:** `pashov-skills/finding-validation.md`
+
+Use these 170 vectors as a comprehensive checklist alongside the exploit pattern database above. Each vector includes:
+- **D** (Detection): What the vulnerable pattern looks like
+- **FP** (False Positive): What makes it NOT a vulnerability
+
+**Vector Groups for Manual Triage:**
+
+```markdown
+## Signature & Cryptography (10 vectors)
+V1, V21, V27, V37, V51, V127, V138, V157, V161, V170
+- Signature malleability, replay, commit-reveal binding, abi.encodePacked collision
+- Cross-reference: Step 5.1c (Signature & Replay Analysis)
+
+## ERC Token Standard Edge Cases (28 vectors)
+V2, V10-V14, V19, V33, V40, V49-V50, V63-V68, V80-V81, V83-V84, V104, V107, V109, V116, V126, V134, V148
+- ERC20/721/1155/4626 rounding, callbacks, approval, burn auth, batch transfer
+- Cross-reference: Step 5.1d (External Call Safety), Non-Standard Token Database
+
+## Access Control & Initialization (8 vectors)
+V15, V38, V79, V101, V113, V118, V139, V150
+- Missing modifiers, delegation privilege escalation, uninitialized takeover
+- Cross-reference: Step 5.1 (Access Control Bypass), Step 5.1g (AA)
+
+## Reentrancy Variants (7 vectors)
+V12, V52, V60, V83, V105, V153, V156
+- Classic, cross-function, cross-contract, read-only, ERC-777, cross-chain
+- Cross-reference: Step 5.1 (Reentrancy), SCAN Reentrancy Variants
+
+## Oracle & Price Feed (9 vectors)
+V55, V69, V86, V93, V124, V137, V141, V145, V164
+- Chainlink staleness/bounds, TWAP manipulation, L2 sequencer, front-running
+- Cross-reference: Step 5.1 (Oracle Manipulation), Step 5.1j (L2 Security)
+
+## Flash Loan & MEV (6 vectors)
+V3, V86, V90, V125, V131, V144
+- Snapshot-based benefits, sandwich, governance flash vote, reward front-run
+- Cross-reference: Step 5.1 (Flash Loan Attack)
+
+## Proxy & Upgrades (18 vectors)
+V6, V18, V20, V28, V36, V46, V48, V53, V58, V106, V113, V118, V123, V139, V149, V155, V162, V168
+- UUPS, Beacon, Diamond, storage collision, CPIMP, metamorphic
+- Cross-reference: Step 5.1e (Proxy Safety), Step 5.1h (CPIMP)
+
+## Math & Precision (14 vectors)
+V4, V26, V32, V35, V45, V56, V66-V67, V70, V120, V133, V135-V136, V167
+- Division-before-multiply, truncation, downcast, inflation attack, off-by-one
+- Cross-reference: Step 5.1 (Integer Overflow), Step 5.3 (Edge Cases)
+
+## DoS & Griefing (11 vectors)
+V10, V22, V25, V30, V42, V54, V77, V82, V110, V129, V146
+- Unbounded loops, push payment revert, return bomb, dust griefing
+- Cross-reference: Step 5.1 (Gas Griefing)
+
+## Cross-Chain & LayerZero (18 vectors)
+V7, V24, V38-V39, V42, V44, V47, V59, V71, V114, V117, V119, V140, V142-V143, V156, V159-V160
+- lzCompose spoofing, DVN diversity, peer validation, rate limits, message library
+- Cross-reference: Step 5.1j (L2 & Cross-Chain Security)
+
+## Assembly & Low-Level (12 vectors)
+V34, V62, V74, V76, V78, V85, V91-V92, V99, V158, V166, V169
+- Scratch space corruption, dirty bits, returndatasize, free memory pointer, calldataload
+- Cross-reference: Step 5.1f (Compiler & Bytecode Verification)
+
+## Account Abstraction (5 vectors)
+V100, V108, V122, V150, V163
+- validateUserOp, paymaster, counterfactual wallet, banned opcodes
+- Cross-reference: Step 5.1g (Account Abstraction Security)
+
+## Deployment & Configuration (7 vectors)
+V31, V72, V88, V96, V102-V103, V132
+- Immutable misconfiguration, nonce gaps, non-atomic bootstrap, hardcoded addresses
+- Cross-reference: Step 5.1h (CPIMP), Step 5.1j (L2)
+```
+
+**Triage Method:** For each vector group, classify vectors as Skip/Borderline/Survive based on codebase relevance. Only deep-dive surviving vectors. See `pashov-skills/agents/vector-scan-agent.md` for the full triage workflow.
 
 ### **Step 5.3: Edge Case Testing**
 ```solidity

@@ -319,6 +319,19 @@ This framework is provided for educational and professional use in smart contrac
 
 ---
 
+## AI Context
+
+| Artifact | Purpose |
+|----------|---------|
+| [CLAUDE.md](CLAUDE.md) | AI agent context for this framework — structure, lenses, editing rules |
+| [../llms.txt](../llms.txt) | AI page index (regenerate with `../scripts/build-llms-txt.sh`) |
+| [../llms-full.txt](../llms-full.txt) | Full concatenated content for AI ingestion |
+| [CommandInstruction-Go.md](CommandInstruction-Go.md) | Use directly as LLM system prompt |
+
+Documentation follows the [docs-for-humans-and-ai](../ClaudeSkills/plugins/docs-for-humans-and-ai/) standard adapted from [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts).
+
+---
+
 **Framework Version:** 2.1  
 **Last Updated:** February 2026  
 **Target Ecosystems:** Cosmos SDK, CometBFT (ABCI/ABCI++), IBC, General Go  

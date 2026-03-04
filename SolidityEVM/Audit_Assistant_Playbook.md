@@ -1,7 +1,7 @@
 # Audit Assistant Playbook
 Cognitive Framework for Smart Contract Auditing
 
-* Version: 3.0 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security
+* Version: 3.1 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, **Pashov Audit Group 170-Vector Parallelized Scan**
 * Status: Experimental / Practitioner Tool
 * Audience: Experienced smart contract auditors
 
@@ -35,6 +35,7 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 | `audit-workflow1.md` | Manual audit phases, checklists, attack vectors | During Code Path Explorer, hypothesis validation |
 | `audit-workflow2.md` | Semantic phase analysis (SNAPSHOT→COMMIT) | When classifying functions, tracing mutations |
 | `CommandInstruction.md` | System prompt for audit sessions | At start of any audit chat |
+| `pashov-skills/` | 170-vector parallelized scan, confidence scoring, agent instructions | Fast pre-audit triage, automated scanning, CI integration |
 
 **Key Methodology Concepts to Apply:**
 - **Semantic Phases**: SNAPSHOT → ACCOUNTING → VALIDATION → MUTATION → COMMIT
@@ -52,6 +53,8 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 - **Developer Assumption Inventory**: 8 subtypes of unstated preconditions
 - **Cross-Cutting Synthesis**: Temporal gaps, indefinite capability grants, compositional cascades
 - **Verification Strategy**: FV vs fuzzing vs manual — 60% ceiling for automated tools
+- **Pashov 170-Vector Scan**: Parallelized agentic scan with FP gates, confidence scoring, and cross-chain/LayerZero coverage (18 vectors)
+- **Pashov Confidence Scoring**: Start at 100, deduct for privilege (-25), partial path (-20), self-contained impact (-15), threshold at 75
 
 ---
 
@@ -111,6 +114,16 @@ This playbook structures **conversations**. The actual audit **methodology** liv
     └─ prepare local workspace
     └─ attach merged.txt and docs to assistant
     └─ build scope index for manual audit
+
+[0.5] Pashov Fast Scan (optional, parallelized)
+    └─ spawn 4 vector-scan agents (Sonnet) on merged.txt
+    └─ each agent covers ~42 attack vectors (170 total)
+    └─ triage pass: Skip / Borderline / Survive
+    └─ deep pass: structured one-liners → confidence score
+    └─ spawn adversarial reasoning agent (Opus, DEEP mode)
+    └─ FP gate (concrete path, reachable entry, no guard)
+    └─ confidence ≥ 75 → feed to Hypothesis Generator [2]
+    └─ see pashov-skills/README.md
 
 [1] Exploration
     └─ initial understanding of the protocol
@@ -579,6 +592,105 @@ Remain skeptical and triage-oriented.
 Verify claimed code behavior using merged.txt.
 Do NOT introduce new vulnerabilities or scope.
 Follow the same STRICT output format.
+```
+
+### 2.5 Pashov Parallelized Scan
+
+**Role:** Fast parallelized security scan using 170 attack vectors (Pashov Audit Group)
+
+> **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — MIT Licensed
+> **Reference:** `pashov-skills/` directory for full agent instructions, attack vectors, and scoring rules
+> **Best for:** Pre-audit triage, fast automated scanning, codebase under ~2,500 lines
+
+```text
+[AUDIT AGENT: Pashov Parallelized Scan]
+
+Instructions:
+Follow the Pashov parallelized scan workflow EXACTLY.
+Reference files are in the `pashov-skills/` directory.
+
+Available Code Context:
+- The pinned file "merged.txt" contains the full in-scope smart contracts.
+- OR: scan all in-scope .sol files found via `find` (per mode selection).
+
+Mode Selection:
+- **default** (no arguments): scan all `.sol` files. Exclude: `interfaces/`, `lib/`, `mocks/`, `test/`, `*.t.sol`, `*Test*.sol`, `*Mock*.sol`.
+- **deep**: same as default + spawn adversarial reasoning agent for thorough review.
+- **`$filename ...`**: scan specified file(s) only.
+
+Task:
+Orchestrate a parallelized security scan across 170 attack vectors.
+
+[ORCHESTRATION WORKFLOW]
+
+**Turn 1 — Discover.**
+In parallel: (a) Bash `find` for in-scope `.sol` files per mode, (b) Locate `pashov-skills/` reference directory.
+
+**Turn 2 — Prepare.**
+In parallel: (a) Read `pashov-skills/agents/vector-scan-agent.md`, (b) Read `pashov-skills/report-formatting.md`, (c) Create four per-agent bundle files (`/tmp/audit-agent-{1,2,3,4}-bundle.md`) — each concatenates ALL in-scope `.sol` files (with `### path` headers and fenced code blocks), then `pashov-skills/finding-validation.md`, then `pashov-skills/report-formatting.md`, then `pashov-skills/attack-vectors/attack-vectors-N.md`; print line counts.
+
+**Turn 3 — Spawn.**
+Spawn all agents as parallel tool calls:
+- **Agents 1–4** (vector scanning): Each receives vector-scan-agent.md instructions + their bundle file.
+- **Agent 5** (adversarial reasoning, DEEP mode only): Receives in-scope file paths + `pashov-skills/agents/adversarial-reasoning-agent.md` instructions.
+
+**Turn 4 — Report.**
+Merge all agent results: deduplicate by root cause (keep higher-confidence version), sort by confidence highest-first, re-number sequentially, insert **Below Confidence Threshold** separator row. Use `pashov-skills/report-formatting.md` for the scope table and output structure.
+
+[FINDING VALIDATION — from pashov-skills/finding-validation.md]
+
+FP Gate (ALL must pass — drop finding if any fails):
+1. Concrete attack path: caller → function call → state change → loss/impact
+2. Entry point reachable by attacker (check modifiers, guards)
+3. No existing guard prevents the attack
+
+Confidence Score (start at 100, apply deductions):
+- Privileged caller required → -25
+- Partial attack path → -20
+- Self-contained impact → -15
+
+Threshold: 75 (below = description only, no Fix block)
+
+[CROSS-REFERENCE TO INFOSEC FRAMEWORK]
+
+Pashov scan findings should be used as:
+- Input to the Attack Hypothesis Generator (confirmed findings → hypotheses)
+- Signal for targeted SCAN prompts (surviving vector groups → specific SCANs)
+- Cross-validation data for Code Path Explorer (verified independently)
+- Pre-filter for the Adversarial Reviewer (confidence < 75 → manual triage)
+
+[DO NOT REPORT]
+- Linter/compiler-level notes, gas micro-optimizations, naming, NatSpec
+- Admin privileges that are by-design (owner can pause, set fees)
+- Missing events or logging
+- Centralization observations without concrete exploit path
+- Theoretical issues requiring implausible preconditions
+
+[END]
+```
+
+#### Pashov Scan / TARGETED
+
+```text
+Continue Pashov Parallelized Scan mode.
+Focus on specific vector groups:
+- <LIST VECTOR GROUPS: e.g., "Reentrancy (V12, V52, V60, V83, V105, V153, V156)">
+Re-scan only the specified vectors with deeper analysis.
+Apply the same FP gate and confidence scoring.
+```
+
+#### Pashov Scan / MERGE WITH HYPOTHESES
+
+```text
+Context:
+The Pashov Parallelized Scan has produced findings.
+The Attack Hypothesis Generator has produced hypotheses H1..Hn.
+
+Task:
+1. Map each Pashov finding to the closest hypothesis (or mark as NEW).
+2. For mapped findings: does the Pashov finding confirm, contradict, or extend the hypothesis?
+3. For NEW findings: generate a new hypothesis in the standard H<N> format.
+4. Output a combined priority list for Code Path Explorer validation.
 ```
 
 ## 3. EXPLORATION CHAT PROMPTS
@@ -1679,6 +1791,93 @@ For each item:
 - The economic/liquidation concern
 - Affected contracts/functions
 - The specific failure mode
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Pashov 170-Vector Triage
+```text
+Context:
+Perform a structured triage of the Pashov 170-vector attack surface
+against the current codebase.
+
+Goal:
+Classify all 170 attack vectors into Skip/Borderline/Survive tiers,
+then deep-dive surviving vectors with FP gate validation.
+
+Instructions:
+- Use the full code from merged.txt.
+- Reference attack vectors from pashov-skills/attack-vectors/attack-vectors-{1,2,3,4}.md
+- Apply finding validation from pashov-skills/finding-validation.md
+- Do NOT write a full report — this is a triage pass.
+
+Process:
+1. Read all 4 attack vector files (170 vectors total).
+2. For EACH vector, classify:
+   - **Skip**: Named construct AND underlying concept both absent
+   - **Borderline**: Named construct absent but underlying concept could manifest differently
+   - **Survive**: Construct or pattern clearly present in codebase
+3. For Borderline vectors: promote only if you can name the specific function + describe how exploit works in 1 sentence.
+4. For Surviving vectors: apply FP gate (3 checks from finding-validation.md).
+5. For each CONFIRMED vector: assign confidence score.
+
+Output:
+## Triage Summary
+- Skip: V1, V2, ... (N vectors)
+- Borderline: V8, V22, ... (N vectors) — with 1-sentence justification each
+- Survive: V3, V16, ... (N vectors)
+- Confirmed: V<N> [score] — brief description
+
+## Recommended Follow-Up
+Which SCAN modes or AUDIT AGENT roles to invoke for confirmed findings.
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN Pashov Cross-Chain & LayerZero Deep Dive
+```text
+Context:
+Perform a deep security scan using Pashov LayerZero/cross-chain vectors.
+
+Goal:
+Identify cross-chain vulnerabilities using the 18 LayerZero-specific vectors
+from the Pashov 170-vector database.
+
+Instructions:
+- Use the full code from merged.txt.
+- Focus on vectors: V7, V24, V38-V39, V42, V44, V47, V59, V71, V114, V117, V119, V140, V142-V143, V156, V159-V160
+- Reference: pashov-skills/attack-vectors/ for full vector descriptions
+- Apply: pashov-skills/finding-validation.md for FP gate + confidence scoring
+- Cross-reference: audit-workflow1.md Step 5.1j (L2 & Cross-Chain Security)
+
+Focus areas:
+- lzCompose sender impersonation (V7)
+- Delegate privilege escalation (V38)
+- Cross-chain supply accounting invariant violation (V39)
+- Ordered message channel blocking / nonce DoS (V42)
+- State-time lag exploitation / lzRead stale state (V44)
+- OFT shared decimals truncation / uint64 overflow (V47)
+- Cross-chain address ownership variance (V59)
+- Missing enforcedOptions / insufficient gas (V71)
+- Insufficient block confirmations / reorg (V114)
+- Cross-chain message spoofing / missing peer validation (V117)
+- Unauthorized peer initialization / fake peer attack (V119)
+- Missing cross-chain rate limits / circuit breakers (V143)
+- DVN collusion / insufficient diversity (V142)
+- Default message library hijack (V160)
+- Missing _debit authorization in OFT (V159)
+- Cross-chain reentrancy via safe transfer callbacks (V156)
+
+Output:
+For each confirmed finding:
+- Vector ID, confidence score, and 1-line description
+- Contract.function location
+- Attack path summary
+- Recommended fix
 
 Language:
 Respond in Russian.

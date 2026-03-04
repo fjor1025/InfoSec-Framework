@@ -143,6 +143,7 @@ The methodology includes analysis patterns derived from historical Cosmos exploi
 
 ```
 Cosmos-SDK/
+├── CLAUDE.md                                    ← AI agent context
 ├── README.md                                    ← You are here
 ├── CommandInstruction-Cosmos.md                 ← System prompt (copy into LLM)
 ├── Cosmos-SDK-Security-Audit-Methodology.md     ← Core methodology (9 sections)
@@ -153,3 +154,14 @@ Cosmos-SDK/
 
 **Maintained by:** InfoSec Framework Contributors
 **License:** See [parent LICENSE](../LICENSE)
+
+## AI Context
+
+| Artifact | Purpose |
+|----------|---------|
+| [CLAUDE.md](CLAUDE.md) | AI agent context for this framework — structure, lenses, editing rules |
+| [../llms.txt](../llms.txt) | AI page index (regenerate with `../scripts/build-llms-txt.sh`) |
+| [../llms-full.txt](../llms-full.txt) | Full concatenated content for AI ingestion |
+| [CommandInstruction-Cosmos.md](CommandInstruction-Cosmos.md) | Use directly as LLM system prompt |
+
+Documentation follows the [docs-for-humans-and-ai](../ClaudeSkills/plugins/docs-for-humans-and-ai/) standard adapted from [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts).

@@ -149,6 +149,19 @@ The playbook now includes all 10 sections:
 
 ---
 
+## AI Context
+
+| Artifact | Purpose |
+|----------|---------|
+| [CLAUDE.md](CLAUDE.md) | AI agent context for this framework — structure, lenses, editing rules |
+| [../llms.txt](../llms.txt) | AI page index (regenerate with `../scripts/build-llms-txt.sh`) |
+| [../llms-full.txt](../llms-full.txt) | Full concatenated content for AI ingestion |
+| [CommandInstruction-Cairo.md](CommandInstruction-Cairo.md) | Use directly as LLM system prompt |
+
+Documentation follows the [docs-for-humans-and-ai](../ClaudeSkills/plugins/docs-for-humans-and-ai/) standard adapted from [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts).
+
+---
+
 **Framework Version:** 2.0
 **Last Updated:** February 2026
 **Target Ecosystems:** Cairo, StarkNet L2

@@ -1,0 +1,99 @@
+# InfoSec-Framework — Audit Assistant Playbook
+
+> A structured audit framework for smart contract security across 6 blockchain ecosystems. Binding architecture that forces AI agents into structured audit behavior. ~15,000+ lines of methodology, attack vectors, and conversation prompts.
+
+## Core
+
+- [README.md](README.md): A cognitive playbook for experienced smart contract auditors.
+- [CLAUDE.md](CLAUDE.md): A structured audit framework for smart contract security across 6 blockchain ecosystems. Pure Markdown knowledge graph — no build step, no web framework.
+- [report-writing.md](report-writing.md): **Purpose:** Teach auditors how to write reports that judges validate in 60 seconds — and that survive the escalation process afterward.
+- [VULNERABILITY_PATTERNS_INTEGRATION.md](VULNERABILITY_PATTERNS_INTEGRATION.md): **Purpose**: Track the integration of ClaudeSkills vulnerability patterns into each audit framework.
+
+## SolidityEVM (Benchmark Framework)
+
+- [SolidityEVM/CLAUDE.md](SolidityEVM/CLAUDE.md): The **benchmark framework** that all other ecosystem frameworks were modeled after. Covers Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.).
+- [SolidityEVM/README.md](SolidityEVM/README.md): **Version:** 3.1 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), and **[Pas
+- [SolidityEVM/CommandInstruction.md](SolidityEVM/CommandInstruction.md): **Exception:** If the user explicitly invokes an `[AUDIT AGENT: <Role>]`, skip the alignment gate and execute that role immediately.
+- [SolidityEVM/audit-workflow1.md](SolidityEVM/audit-workflow1.md): **Version:** 3.1 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, 2024–2025 exploit database, and **Pashov Audit Group 170 A
+- [SolidityEVM/audit-workflow2.md](SolidityEVM/audit-workflow2.md): **Version:** 3.0 — Enhanced with Specification Completeness Analysis, Compiler Verification, evmresearch.io knowledge graph integration
+- [SolidityEVM/Audit_Assistant_Playbook.md](SolidityEVM/Audit_Assistant_Playbook.md): **AI accelerates filtering and formalization.
+
+### Pashov Audit Group Integration
+
+- [SolidityEVM/pashov-skills/README.md](SolidityEVM/pashov-skills/README.md): **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — MIT Licensed
+- [SolidityEVM/pashov-skills/agents/adversarial-reasoning-agent.md](SolidityEVM/pashov-skills/agents/adversarial-reasoning-agent.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
+- [SolidityEVM/pashov-skills/agents/vector-scan-agent.md](SolidityEVM/pashov-skills/agents/vector-scan-agent.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
+- [SolidityEVM/pashov-skills/attack-vectors/attack-vectors-1.md](SolidityEVM/pashov-skills/attack-vectors/attack-vectors-1.md): 170 total attack vectors
+- [SolidityEVM/pashov-skills/attack-vectors/attack-vectors-2.md](SolidityEVM/pashov-skills/attack-vectors/attack-vectors-2.md): 170 total attack vectors
+- [SolidityEVM/pashov-skills/attack-vectors/attack-vectors-3.md](SolidityEVM/pashov-skills/attack-vectors/attack-vectors-3.md): 170 total attack vectors
+- [SolidityEVM/pashov-skills/attack-vectors/attack-vectors-4.md](SolidityEVM/pashov-skills/attack-vectors/attack-vectors-4.md): 170 total attack vectors
+- [SolidityEVM/pashov-skills/finding-validation.md](SolidityEVM/pashov-skills/finding-validation.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
+- [SolidityEVM/pashov-skills/report-formatting.md](SolidityEVM/pashov-skills/report-formatting.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
+
+## RustBaseSmartContract
+
+- [RustBaseSmartContract/Audit_Assistant_Playbook_Rust.md](RustBaseSmartContract/Audit_Assistant_Playbook_Rust.md): **AI accelerates filtering and formalization.
+- [RustBaseSmartContract/CLAUDE.md](RustBaseSmartContract/CLAUDE.md): Covers **CosmWasm**, **Solana/Anchor**, **Substrate**, and general Rust smart contracts. Version 3.2 includes Safe Solana Builder (Frank Castle) patterns and Awesome-Rust-Checker integration.
+- [RustBaseSmartContract/CommandInstruction-Rust.md](RustBaseSmartContract/CommandInstruction-Rust.md): **Purpose:** Copy this entire file as the system prompt when starting a new audit chat.
+- [RustBaseSmartContract/README.md](RustBaseSmartContract/README.md): **A complete, standalone methodology for auditing Rust-based smart contracts**
+- [RustBaseSmartContract/Rust-Smartcontract-workflow.md](RustBaseSmartContract/Rust-Smartcontract-workflow.md): **Integration Note:** This file contains the Rust-specific audit methodology.
+
+## Go-SmartContract
+
+- [Go-SmartContract/Audit_Assistant_Playbook_Go.md](Go-SmartContract/Audit_Assistant_Playbook_Go.md): **AI accelerates filtering and formalization.
+- [Go-SmartContract/CLAUDE.md](Go-SmartContract/CLAUDE.md): Covers **Cosmos SDK**, **CometBFT ABCI/ABCI++**, **IBC**, and general Go blockchain applications. Version 2.1 adds ABCI++ lifecycle, module integration, and transaction structure attack patterns.
+- [Go-SmartContract/CommandInstruction-Go.md](Go-SmartContract/CommandInstruction-Go.md): **Purpose:** Copy this entire file as the system prompt when starting a new audit chat.
+- [Go-SmartContract/Go-Smart-Contract-Audit-Methodology.md](Go-SmartContract/Go-Smart-Contract-Audit-Methodology.md): **Integration Note:** This file contains the Go-specific audit methodology.
+- [Go-SmartContract/README.md](Go-SmartContract/README.md): **A complete, standalone methodology for auditing Go-based blockchain applications**
+
+## Cosmos-SDK
+
+- [Cosmos-SDK/Audit_Assistant_Playbook_Cosmos.md](Cosmos-SDK/Audit_Assistant_Playbook_Cosmos.md): **AI accelerates filtering and formalization.**
+- [Cosmos-SDK/CLAUDE.md](Cosmos-SDK/CLAUDE.md): Advanced chain-level security for **Cosmos SDK**, **CometBFT**, **IBC**, and **Interchain Security**. Covers module security, consensus safety, governance attacks, and economic exploit theory.
+- [Cosmos-SDK/CommandInstruction-Cosmos.md](Cosmos-SDK/CommandInstruction-Cosmos.md): **Purpose:** Copy this entire file as the system prompt when starting a new Cosmos-SDK audit chat.
+- [Cosmos-SDK/Cosmos-SDK-Security-Audit-Methodology.md](Cosmos-SDK/Cosmos-SDK-Security-Audit-Methodology.md): **Integration Note:** This file contains the Cosmos-SDK-specific security framework.
+- [Cosmos-SDK/README.md](Cosmos-SDK/README.md): **Ecosystem:** Cosmos SDK / CometBFT / IBC / Interchain Security
+
+## Cairo-StarkNet
+
+- [Cairo-StarkNet/Audit_Assistant_Playbook_Cairo.md](Cairo-StarkNet/Audit_Assistant_Playbook_Cairo.md): **AI accelerates filtering and formalization.
+- [Cairo-StarkNet/CLAUDE.md](Cairo-StarkNet/CLAUDE.md): Covers **Cairo** smart contracts on **StarkNet L2** with special attention to L1↔L2 bridge security, felt252 arithmetic, and signature replay vectors.
+- [Cairo-StarkNet/Cairo-Audit-Methodology.md](Cairo-StarkNet/Cairo-Audit-Methodology.md): **Integration Note:** This file contains the Cairo-specific audit methodology.
+- [Cairo-StarkNet/CommandInstruction-Cairo.md](Cairo-StarkNet/CommandInstruction-Cairo.md): **Purpose:** Copy this entire file as the system prompt when starting a new audit chat.
+- [Cairo-StarkNet/README.md](Cairo-StarkNet/README.md): A comprehensive audit framework for Cairo smart contracts on StarkNet L2.
+
+## Algorand-PyTeal
+
+- [Algorand-PyTeal/Algorand-Audit-Methodology.md](Algorand-PyTeal/Algorand-Audit-Methodology.md): **Integration Note:** This file contains the Algorand-specific audit methodology.
+- [Algorand-PyTeal/Audit_Assistant_Playbook_Algorand.md](Algorand-PyTeal/Audit_Assistant_Playbook_Algorand.md): **AI accelerates filtering and formalization.
+- [Algorand-PyTeal/CLAUDE.md](Algorand-PyTeal/CLAUDE.md): Covers **Algorand** smart contracts in **PyTeal**, **TEAL**, and **ARC4**. Special attention to transaction field validation, group transaction security, and inner transaction fee pooling.
+- [Algorand-PyTeal/CommandInstruction-Algorand.md](Algorand-PyTeal/CommandInstruction-Algorand.md): **Purpose:** Copy this entire file as the system prompt when starting a new audit chat.
+- [Algorand-PyTeal/README.md](Algorand-PyTeal/README.md): A comprehensive audit framework for Algorand smart contracts (PyTeal, TEAL, ARC4).
+
+## ClaudeSkills Plugins
+
+- [ClaudeSkills/plugins/ask-questions-if-underspecified/README.md](ClaudeSkills/plugins/ask-questions-if-underspecified/README.md): Ask the minimum set of clarifying questions needed to avoid wrong work.  
+- [ClaudeSkills/plugins/audit-context-building/README.md](ClaudeSkills/plugins/audit-context-building/README.md): Build deep architectural context through ultra-granular code analysis before vulnerability hunting.
+- [ClaudeSkills/plugins/building-secure-contracts/README.md](ClaudeSkills/plugins/building-secure-contracts/README.md): Comprehensive smart contract security toolkit based on Trail of Bits' [Building Secure Contracts](https://github.com/crytic/building-secure-contracts) framework.
+- [ClaudeSkills/plugins/burpsuite-project-parser/README.md](ClaudeSkills/plugins/burpsuite-project-parser/README.md): Search and extract data from Burp Suite project files (.burp) for use in Claude
+- [ClaudeSkills/plugins/claude-in-chrome-troubleshooting/README.md](ClaudeSkills/plugins/claude-in-chrome-troubleshooting/README.md): Diagnose and fix Claude in Chrome MCP extension connectivity issues.
+- [ClaudeSkills/plugins/constant-time-analysis/README.md](ClaudeSkills/plugins/constant-time-analysis/README.md): A portable tool for detecting timing side-channel vulnerabilities in compiled cryptographic code. Analyzes assembly output from multiple compilers and architectures to detect instructions that could l
+- [ClaudeSkills/plugins/culture-index/README.md](ClaudeSkills/plugins/culture-index/README.md): 130% = STRESS (burnout risk)
+- [ClaudeSkills/plugins/differential-review/README.md](ClaudeSkills/plugins/differential-review/README.md): Security-focused differential review of code changes with git history analysis and blast radius estimation.
+- [ClaudeSkills/plugins/docs-for-humans-and-ai/README.md](ClaudeSkills/plugins/docs-for-humans-and-ai/README.md): Write and maintain documentation that serves both human readers and AI agents equally well.
+- [ClaudeSkills/plugins/dwarf-expert/README.md](ClaudeSkills/plugins/dwarf-expert/README.md): Interact with and analyze DWARF debug files, understand the DWARF debug format/standard, and write code that parses DWARF data.
+- [ClaudeSkills/plugins/entry-point-analyzer/README.md](ClaudeSkills/plugins/entry-point-analyzer/README.md): A Claude skill for systematically identifying **state-changing** entry points in smart contract codebases to guide security audits.
+- [ClaudeSkills/plugins/firebase-apk-scanner/README.md](ClaudeSkills/plugins/firebase-apk-scanner/README.md): Scan Android APKs for Firebase security misconfigurations including open databases, exposed storage buckets, and authentication bypasses.
+- [ClaudeSkills/plugins/fix-review/README.md](ClaudeSkills/plugins/fix-review/README.md): Verify that code changes address security audit findings without introducing bugs.
+- [ClaudeSkills/plugins/modern-python/README.md](ClaudeSkills/plugins/modern-python/README.md): Modern Python tooling and best practices using uv, ruff, ty, and pytest. Based on patterns from [trailofbits/cookiecutter-python](https://github.com/trailofbits/cookiecutter-python).
+- [ClaudeSkills/plugins/property-based-testing/README.md](ClaudeSkills/plugins/property-based-testing/README.md): Property-based testing guidance for multiple languages and smart contracts.
+- [ClaudeSkills/plugins/semgrep-rule-creator/README.md](ClaudeSkills/plugins/semgrep-rule-creator/README.md): Create production-quality Semgrep rules for detecting bug patterns and security vulnerabilities.
+- [ClaudeSkills/plugins/semgrep-rule-variant-creator/README.md](ClaudeSkills/plugins/semgrep-rule-variant-creator/README.md): A Claude Code skill for porting existing Semgrep rules to new target languages with proper applicability analysis and test-driven validation.
+- [ClaudeSkills/plugins/sharp-edges/README.md](ClaudeSkills/plugins/sharp-edges/README.md): Identifies error-prone APIs, dangerous configurations, and footgun designs that enable security mistakes through developer confusion, laziness, or malice.
+- [ClaudeSkills/plugins/spec-to-code-compliance/README.md](ClaudeSkills/plugins/spec-to-code-compliance/README.md): Specification-to-code compliance checker for blockchain audits with evidence-based alignment analysis.
+- [ClaudeSkills/plugins/static-analysis/README.md](ClaudeSkills/plugins/static-analysis/README.md): A comprehensive static analysis toolkit with CodeQL, Semgrep, and SARIF parsing for security vulnerability detection.
+- [ClaudeSkills/plugins/testing-handbook-skills/README.md](ClaudeSkills/plugins/testing-handbook-skills/README.md): Meta-skill that generates Claude Code skills from the [Trail of Bits Application Security Testing Handbook](https://appsec.guide).
+- [ClaudeSkills/plugins/variant-analysis/README.md](ClaudeSkills/plugins/variant-analysis/README.md): Find similar vulnerabilities and bugs across codebases using pattern-based analysis.
+
+---
+Generated: 2026-03-04 15:06:13 UTC
