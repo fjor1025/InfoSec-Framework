@@ -85,6 +85,9 @@ audit-assistant-playbook/
     │   ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
     │   ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
     │   └── ton-vulnerability-scanner/      <- Available (no framework yet)
+    ├── plugins/solidity-auditor/          <- /solidity-auditor slash command (Pashov)
+    │   └── skills/solidity-auditor/
+    │       └── SKILL.md                   <- Orchestrator: 4 vector-scan + 1 adversarial agent
     └── plugins/docs-for-humans-and-ai/    <- Documentation standard (Cyfrin)
         └── skills/docs-for-humans-and-ai/
             ├── SKILL.md                   <- Dual-audience formatting + Diataxis
@@ -127,6 +130,7 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
+| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (reference files) | Slash command invoking 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
 | **docs-for-humans-and-ai** | Diataxis + llmstxt.org standard | All 7 CLAUDE.md files + llms.txt + llms-full.txt + build script | Dual-audience formatting, LOCAL CUSTOMIZATIONS marker, AI-consumable docs standard (Cyfrin claude-docs-prompts) |
 
 ## Key Concepts (Universal)

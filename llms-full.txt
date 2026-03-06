@@ -1,7 +1,7 @@
 # InfoSec-Framework — Full Content
 
 > Auto-generated concatenation of all framework files for AI consumption.
-> Generated: 2026-03-04 15:06:13 UTC
+> Generated: 2026-03-06 16:16:06 UTC
 
 ================================================================
 FILE: README.md
@@ -94,6 +94,9 @@ audit-assistant-playbook/
     │   ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
     │   ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
     │   └── ton-vulnerability-scanner/      <- Available (no framework yet)
+    ├── plugins/solidity-auditor/          <- /solidity-auditor slash command (Pashov)
+    │   └── skills/solidity-auditor/
+    │       └── SKILL.md                   <- Orchestrator: 4 vector-scan + 1 adversarial agent
     └── plugins/docs-for-humans-and-ai/    <- Documentation standard (Cyfrin)
         └── skills/docs-for-humans-and-ai/
             ├── SKILL.md                   <- Dual-audience formatting + Diataxis
@@ -136,6 +139,8 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
+| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (reference files) | Slash command invoking 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
+| **docs-for-humans-and-ai** | Diataxis + llmstxt.org standard | All 7 CLAUDE.md files + llms.txt + llms-full.txt + build script | Dual-audience formatting, LOCAL CUSTOMIZATIONS marker, AI-consumable docs standard (Cyfrin claude-docs-prompts) |
 
 ## Key Concepts (Universal)
 
@@ -224,7 +229,7 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.1 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (all others)
+**Framework Version:** 3.1 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK)
 **Last Updated:** March 2026
 **License:** MIT
 
@@ -274,6 +279,7 @@ InfoSec-Framework/
 │
 ├── ClaudeSkills/                          ← Trail of Bits vulnerability patterns + plugins
 │   └── plugins/
+│       ├── solidity-auditor/              ← /solidity-auditor slash command (Pashov)
 │       ├── docs-for-humans-and-ai/        ← Documentation standard (this integration)
 │       ├── audit-context-building/        ← Deep context before hunting
 │       ├── building-secure-contracts/     ← Ecosystem vulnerability scanners

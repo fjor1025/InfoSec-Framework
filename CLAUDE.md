@@ -39,6 +39,7 @@ InfoSec-Framework/
 │
 ├── ClaudeSkills/                          ← Trail of Bits vulnerability patterns + plugins
 │   └── plugins/
+│       ├── solidity-auditor/              ← /solidity-auditor slash command (Pashov)
 │       ├── docs-for-humans-and-ai/        ← Documentation standard (this integration)
 │       ├── audit-context-building/        ← Deep context before hunting
 │       ├── building-secure-contracts/     ← Ecosystem vulnerability scanners

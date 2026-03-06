@@ -90,10 +90,11 @@
 - [ClaudeSkills/plugins/semgrep-rule-creator/README.md](ClaudeSkills/plugins/semgrep-rule-creator/README.md): Create production-quality Semgrep rules for detecting bug patterns and security vulnerabilities.
 - [ClaudeSkills/plugins/semgrep-rule-variant-creator/README.md](ClaudeSkills/plugins/semgrep-rule-variant-creator/README.md): A Claude Code skill for porting existing Semgrep rules to new target languages with proper applicability analysis and test-driven validation.
 - [ClaudeSkills/plugins/sharp-edges/README.md](ClaudeSkills/plugins/sharp-edges/README.md): Identifies error-prone APIs, dangerous configurations, and footgun designs that enable security mistakes through developer confusion, laziness, or malice.
+- [ClaudeSkills/plugins/solidity-auditor/README.md](ClaudeSkills/plugins/solidity-auditor/README.md): A parallelized Solidity security audit across 170 Pashov attack vectors.  
 - [ClaudeSkills/plugins/spec-to-code-compliance/README.md](ClaudeSkills/plugins/spec-to-code-compliance/README.md): Specification-to-code compliance checker for blockchain audits with evidence-based alignment analysis.
 - [ClaudeSkills/plugins/static-analysis/README.md](ClaudeSkills/plugins/static-analysis/README.md): A comprehensive static analysis toolkit with CodeQL, Semgrep, and SARIF parsing for security vulnerability detection.
 - [ClaudeSkills/plugins/testing-handbook-skills/README.md](ClaudeSkills/plugins/testing-handbook-skills/README.md): Meta-skill that generates Claude Code skills from the [Trail of Bits Application Security Testing Handbook](https://appsec.guide).
 - [ClaudeSkills/plugins/variant-analysis/README.md](ClaudeSkills/plugins/variant-analysis/README.md): Find similar vulnerabilities and bugs across codebases using pattern-based analysis.
 
 ---
-Generated: 2026-03-04 15:06:13 UTC
+Generated: 2026-03-06 16:16:06 UTC

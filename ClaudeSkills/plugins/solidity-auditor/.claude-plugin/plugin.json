@@ -1,0 +1,9 @@
+{
+  "name": "solidity-auditor",
+  "version": "1.0.0",
+  "description": "Parallelized Solidity security audit with 170 Pashov attack vectors, FP gate, and confidence scoring. Trigger on /solidity-auditor. Modes: default (full repo), deep (+ adversarial reasoning agent), or specific filename(s).",
+  "author": {
+    "name": "Pashov Audit Group",
+    "url": "https://github.com/pashov/skills"
+  }
+}
