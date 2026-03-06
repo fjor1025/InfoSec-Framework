@@ -290,6 +290,16 @@ Use this sequence for a complete audit:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 0: DEEP REASONING (optional, for complex logic/state)     │
+│ └─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│    └─ Feynman Auditor: first-principles logic interrogation    │
+│    └─ State Inconsistency Auditor: coupled state desync mapping │
+│    └─ Iterative loop until convergence (max 6 passes)          │
+│    └─ Language-agnostic: adapts to Rust/Solana/CosmWasm/Sub    │
+│    └─ Output: .audit/findings/nemesis-verified.md               │
+│    └─ Feed results into Phase 2 as confirmed signal             │
+│    └─ See: Nemesis/NEMESIS_INTEGRATION.md                      │
+├─────────────────────────────────────────────────────────────────┤
 │ PHASE 1: UNDERSTANDING                                          │
 │ └─ Invoke: [AUDIT AGENT: Protocol Mapper]                       │
 │    └─ Output: Protocol model with assets, flows, invariants     │

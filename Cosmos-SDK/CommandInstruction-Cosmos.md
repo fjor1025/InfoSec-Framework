@@ -277,6 +277,15 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) {
 │           COSMOS-SDK SECURITY AUDIT FLOW                  │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)              │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]              │
+│  ├─ Feynman + State Inconsistency iterative loop           │
+│  ├─ Language-agnostic: adapts to Go/Cosmos SDK              │
+│  ├─ Coupled state map enriches cross-module invariants      │
+│  ├─ Output: .audit/findings/nemesis-verified.md             │
+│  ├─ Feed results into Phase 3 hypothesis generation        │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                    │
+│                                                          │
 │  Phase 1: ARCHITECTURE MAPPING                           │
 │  ├─ Map modules, keepers, ABCI hooks                     │
 │  ├─ Identify trust boundaries                            │

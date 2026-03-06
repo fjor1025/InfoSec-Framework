@@ -12,7 +12,7 @@
 ## SolidityEVM (Benchmark Framework)
 
 - [SolidityEVM/CLAUDE.md](SolidityEVM/CLAUDE.md): The **benchmark framework** that all other ecosystem frameworks were modeled after. Covers Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.).
-- [SolidityEVM/README.md](SolidityEVM/README.md): **Version:** 3.1 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), and **[Pas
+- [SolidityEVM/README.md](SolidityEVM/README.md): **Version:** 3.2 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), **[Pashov 
 - [SolidityEVM/CommandInstruction.md](SolidityEVM/CommandInstruction.md): **Exception:** If the user explicitly invokes an `[AUDIT AGENT: <Role>]`, skip the alignment gate and execute that role immediately.
 - [SolidityEVM/audit-workflow1.md](SolidityEVM/audit-workflow1.md): **Version:** 3.1 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, 2024–2025 exploit database, and **Pashov Audit Group 170 A
 - [SolidityEVM/audit-workflow2.md](SolidityEVM/audit-workflow2.md): **Version:** 3.0 — Enhanced with Specification Completeness Analysis, Compiler Verification, evmresearch.io knowledge graph integration
@@ -20,7 +20,9 @@
 
 ### Pashov Audit Group Integration
 
+- [SolidityEVM/pashov-skills/CLAUDE.md](SolidityEVM/pashov-skills/CLAUDE.md): Pashov Audit Group's parallelized smart contract security audit system. Spawns 4–5 agents scanning 170 atomic attack vectors with confidence scoring and FP gates.
 - [SolidityEVM/pashov-skills/README.md](SolidityEVM/pashov-skills/README.md): **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — MIT Licensed
+- [SolidityEVM/pashov-skills/SKILL.md](SolidityEVM/pashov-skills/SKILL.md): **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — MIT Licensed
 - [SolidityEVM/pashov-skills/agents/adversarial-reasoning-agent.md](SolidityEVM/pashov-skills/agents/adversarial-reasoning-agent.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
 - [SolidityEVM/pashov-skills/agents/vector-scan-agent.md](SolidityEVM/pashov-skills/agents/vector-scan-agent.md): **Source:** Pashov Audit Group Skills — adapted for InfoSec-Framework integration
 - [SolidityEVM/pashov-skills/attack-vectors/attack-vectors-1.md](SolidityEVM/pashov-skills/attack-vectors/attack-vectors-1.md): 170 total attack vectors
@@ -70,6 +72,15 @@
 - [Algorand-PyTeal/CommandInstruction-Algorand.md](Algorand-PyTeal/CommandInstruction-Algorand.md): **Purpose:** Copy this entire file as the system prompt when starting a new audit chat.
 - [Algorand-PyTeal/README.md](Algorand-PyTeal/README.md): A comprehensive audit framework for Algorand smart contracts (PyTeal, TEAL, ARC4).
 
+## Nemesis
+
+- [Nemesis/CLAUDE.md](Nemesis/CLAUDE.md): NEMESIS is a language-agnostic iterative deep-reasoning audit agent. It runs two sub-auditors (Feynman Auditor + State Inconsistency Auditor) in an alternating feedback loop until convergence.
+- [Nemesis/NEMESIS_INTEGRATION.md](Nemesis/NEMESIS_INTEGRATION.md): **Purpose:** Track how NEMESIS iterative reasoning is wired into each ecosystem framework.
+- [Nemesis/README.md](Nemesis/README.md): **Version:** 1.0 — Integrated into InfoSec-Framework
+- [Nemesis/skills/feynman-auditor/SKILL.md](Nemesis/skills/feynman-auditor/SKILL.md): [The exact question from the framework]
+- [Nemesis/skills/nemesis-auditor/SKILL.md](Nemesis/skills/nemesis-auditor/SKILL.md): [The exact question]
+- [Nemesis/skills/state-inconsistency-auditor/SKILL.md](Nemesis/skills/state-inconsistency-auditor/SKILL.md): "This operation modifies State A.
+
 ## ClaudeSkills Plugins
 
 - [ClaudeSkills/plugins/ask-questions-if-underspecified/README.md](ClaudeSkills/plugins/ask-questions-if-underspecified/README.md): Ask the minimum set of clarifying questions needed to avoid wrong work.  
@@ -97,4 +108,4 @@
 - [ClaudeSkills/plugins/variant-analysis/README.md](ClaudeSkills/plugins/variant-analysis/README.md): Find similar vulnerabilities and bugs across codebases using pattern-based analysis.
 
 ---
-Generated: 2026-03-06 16:16:06 UTC
+Generated: 2026-03-06 23:11:42 UTC

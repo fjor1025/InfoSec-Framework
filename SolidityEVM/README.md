@@ -1,6 +1,6 @@
 # Solidity/EVM Audit Framework
 
-> **Version:** 3.1 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), and **[Pashov Audit Group](https://github.com/pashov/skills) 170-vector parallelized scan**
+> **Version:** 3.2 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), **[Pashov Audit Group](https://github.com/pashov/skills) 170-vector parallelized scan**, and **[NEMESIS](https://github.com/sainikethan/nemesis-auditor) iterative deep-reasoning auditor**
 > **Ecosystem:** Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)
 
 ---
@@ -62,9 +62,9 @@ Patterns from [QuillAudits open-source Claude Skills](https://github.com/quillai
 | [audit-workflow1.md](audit-workflow1.md) | ~1150 | Manual audit methodology — 7 phases, 11 attack categories, 40+ known exploits, AA/CPIMP/L2/transient storage, Pashov 170-vector cross-reference |
 | [audit-workflow2.md](audit-workflow2.md) | ~620 | Semantic phase analysis — SNAPSHOT→ACCOUNTING→VALIDATION→MUTATION→COMMIT + Phase 8: Specification Completeness |
 | [Audit_Assistant_Playbook.md](Audit_Assistant_Playbook.md) | ~1960 | Conversation structure — 10 sections, 19 SCAN prompts, Pashov Parallelized Scan agent |
-| [pashov-skills/](pashov-skills/) | ~700 | Pashov Audit Group integration — 170 attack vectors, FP gates, confidence scoring, agent instructions |
+| [pashov-skills/](pashov-skills/) | ~1,300 | Pashov Audit Group integration — SKILL.md orchestrator, 170 attack vectors, FP gates, confidence scoring, agent instructions |
 
-**Total: ~4,630 lines**
+**Total: ~5,230 lines**
 
 ---
 

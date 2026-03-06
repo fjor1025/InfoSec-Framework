@@ -121,6 +121,14 @@ When analyzing Algorand contracts, apply these six lenses:
 │                ALGORAND AUDIT WORKFLOW                          │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)                    │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│  ├─ Feynman + State Inconsistency iterative loop                │
+│  ├─ Language-agnostic: adapts to Algorand/PyTeal/TEAL            │
+│  ├─ Output: .audit/findings/nemesis-verified.md                  │
+│  ├─ Feed results into Phase 2 hypothesis generation             │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                         │
+│                                                                │
 │  Phase 1: EXPLORATION (Protocol Mapper)                        │
 │  ├─ Understand contract architecture                           │
 │  ├─ Map OnComplete handlers and entry points                   │

@@ -1,6 +1,6 @@
 <!-- Managed by docs-for-humans-and-ai skill -->
 <!-- Ecosystem: Solidity/EVM -->
-<!-- Version: 3.1 -->
+<!-- Version: 3.2 -->
 
 # SolidityEVM Audit Framework
 
@@ -19,6 +19,9 @@ SolidityEVM/
 ├── audit-workflow2.md                 ← Semantic phase analysis (SNAPSHOT→COMMIT + Spec Completeness)
 ├── Audit_Assistant_Playbook.md        ← Conversation structure (19 SCAN prompts, 5 agents + Pashov)
 └── pashov-skills/                     ← Pashov Audit Group integration
+    ├── CLAUDE.md                      ← AI agent context
+    ├── SKILL.md                       ← Orchestrator (discovers files, spawns agents, merges report)
+    ├── VERSION                        ← Upstream version tracker
     ├── README.md                      ← Integration overview + comparison
     ├── finding-validation.md          ← FP gate (3 checks) + confidence scoring (100-point)
     ├── report-formatting.md           ← Output template for Pashov scan reports
@@ -40,7 +43,7 @@ SolidityEVM/
 | **audit-workflow1.md** | Manual methodology | ~1150 | Reference during Code Path Explorer and hypothesis validation. |
 | **audit-workflow2.md** | Semantic phases | ~620 | Classify functions by phase; audit phase-by-phase not call-order. |
 | **Audit_Assistant_Playbook.md** | Conversation structure | ~1960 | Defines 5 agent roles, 19 SCAN prompts, and the audit lifecycle. |
-| **pashov-skills/** | Parallelized scan | ~700 | Optional Phase 0 — automated triage before manual audit. |
+| **pashov-skills/** | Parallelized scan | ~1,300 | Optional Phase 0 — automated triage before manual audit. |
 
 ## Auditor's Mindset (10 Lenses)
 

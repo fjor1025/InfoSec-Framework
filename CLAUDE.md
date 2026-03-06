@@ -19,12 +19,15 @@ InfoSec-Framework/
 ├── llms.txt                               ← AI index (page list with descriptions)
 ├── llms-full.txt                          ← AI ingest (full concatenated content)
 │
-├── SolidityEVM/                           ← Benchmark framework (v3.1)
+├── SolidityEVM/                           ← Benchmark framework (v3.2)
 │   ├── CommandInstruction.md              ← System prompt (binding rules)
 │   ├── audit-workflow1.md                 ← Manual methodology + 170-vector Pashov
 │   ├── audit-workflow2.md                 ← Semantic phase analysis (SNAPSHOT→COMMIT)
 │   ├── Audit_Assistant_Playbook.md        ← Conversation structure (19 SCAN prompts)
 │   └── pashov-skills/                     ← Pashov Audit Group integration
+│       ├── CLAUDE.md                      ← AI agent context
+│       ├── SKILL.md                       ← Orchestrator (spawns agents, merges report)
+│       ├── VERSION                        ← Upstream version tracker
 │       ├── finding-validation.md          ← FP gate + confidence scoring
 │       ├── report-formatting.md           ← Output template
 │       ├── agents/                        ← Vector-scan + adversarial agent instructions
@@ -36,6 +39,15 @@ InfoSec-Framework/
 ├── Cairo-StarkNet/                        ← StarkNet L2
 ├── Algorand-PyTeal/                       ← PyTeal / TEAL
 │   (each contains CLAUDE.md + README.md + CommandInstruction + Methodology + Playbook)
+│
+├── Nemesis/                               ← NEMESIS iterative reasoning auditor (language-agnostic)
+│   ├── CLAUDE.md                          ← AI agent context
+│   ├── README.md                          ← Architecture, benchmark, usage
+│   ├── NEMESIS_INTEGRATION.md             ← Per-ecosystem integration status
+│   └── skills/                            ← Actual SKILL.md files (copied from nemesis-auditor)
+│       ├── nemesis-auditor/SKILL.md       ← Orchestrator (iterative loop)
+│       ├── feynman-auditor/SKILL.md       ← First-principles logic bug finder
+│       └── state-inconsistency-auditor/SKILL.md ← Coupled state desync detector
 │
 ├── ClaudeSkills/                          ← Trail of Bits vulnerability patterns + plugins
 │   └── plugins/
@@ -181,8 +193,9 @@ plugins/plugin-name/
 |--------|-----------------|-----------------|
 | [evmresearch.io](https://evmresearch.io) | 300+ notes, 6 knowledge areas | SolidityEVM v3.0 |
 | [QuillAudits Claude Skills V1](https://github.com/quillai-network/qs_skills) | 10 audit skills | SolidityEVM v2.1+ |
-| [Pashov Audit Group](https://github.com/pashov/skills) | 170 attack vectors, parallelized agents | SolidityEVM v3.1 |
+| [Pashov Audit Group](https://github.com/pashov/skills) | 170 attack vectors, parallelized agents, SKILL.md orchestrator | SolidityEVM v3.1+ |
 | [Trail of Bits](https://github.com/trailofbits/publications) | ClaudeSkills vulnerability scanners | All ecosystems |
 | [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts) | Docs-for-humans-and-AI standard | This CLAUDE.md + docs-for-humans-and-ai skill |
+| [NEMESIS Auditor](https://github.com/sainikethan/nemesis-auditor) | Iterative deep-reasoning audit agent (Feynman + State Inconsistency loop) | All 6 ecosystem CommandInstruction files + Nemesis/ |
 
 <!-- LOCAL CUSTOMIZATIONS — everything below this line is preserved on update -->

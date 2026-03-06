@@ -203,6 +203,14 @@ Apply these lenses to EVERY function you analyze:
 │               GO SMART CONTRACT AUDIT FLOW              │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)             │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]             │
+│  ├─ Feynman + State Inconsistency iterative loop          │
+│  ├─ Language-agnostic: adapts to Go/Cosmos                │
+│  ├─ Output: .audit/findings/nemesis-verified.md            │
+│  ├─ Feed results into Phase 2 hypothesis generation       │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                   │
+│                                                         │
 │  Phase 1: EXPLORATION (Protocol Mapper)                 │
 │  ├─ Map keeper structure, module interactions            │
 │  ├─ Identify message flow (CheckTx → DeliverTx/          │

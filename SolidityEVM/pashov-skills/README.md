@@ -47,6 +47,9 @@ A parallelized smart contract security audit system built by [Pashov Audit Group
 
 ```
 pashov-skills/
+├── CLAUDE.md                          # AI agent context
+├── SKILL.md                           # Orchestrator (discovers files, spawns agents, merges report)
+├── VERSION                            # Upstream version tracker
 ├── README.md                          # This file
 ├── finding-validation.md              # FP gate + confidence scoring
 ├── report-formatting.md               # Output format for scan reports

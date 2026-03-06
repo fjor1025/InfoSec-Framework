@@ -36,6 +36,9 @@ audit-assistant-playbook/
 │   ├── audit-workflow1.md                 <- Manual audit methodology + Pashov 170-vector cross-ref
 │   ├── audit-workflow2.md                 <- Semantic phase analysis
 │   └── pashov-skills/                     <- Pashov Audit Group integration
+│       ├── CLAUDE.md                      <- AI agent context
+│       ├── SKILL.md                       <- Orchestrator (discovers files, spawns agents, merges report)
+│       ├── VERSION                        <- Upstream version tracker
 │       ├── README.md                      <- Integration overview
 │       ├── finding-validation.md          <- FP gate + confidence scoring
 │       ├── report-formatting.md           <- Output template
@@ -77,6 +80,15 @@ audit-assistant-playbook/
 │   ├── CommandInstruction-Algorand.md     <- Binding architecture + 6 Algorand lenses
 │   └── Algorand-Audit-Methodology.md      <- Methodology + ClaudeSkills A1–A9 patterns
 │
+├── Nemesis/                               <- NEMESIS iterative reasoning auditor (language-agnostic)
+│   ├── CLAUDE.md                          <- AI agent context
+│   ├── README.md                          <- Architecture, benchmark, usage
+│   ├── NEMESIS_INTEGRATION.md             <- Per-ecosystem integration status
+│   └── skills/                            <- Actual SKILL.md files (copied from nemesis-auditor)
+│       ├── nemesis-auditor/SKILL.md       <- Orchestrator (iterative loop)
+│       ├── feynman-auditor/SKILL.md       <- First-principles logic bug finder
+│       └── state-inconsistency-auditor/SKILL.md <- Coupled state desync detector
+│
 └── ClaudeSkills/                          <- Trail of Bits vulnerability patterns (submodule)
     └── plugins/building-secure-contracts/skills/
     │   ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
@@ -114,6 +126,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
 | **Cairo/StarkNet** | ~2,703 | 1–10 | Cairo C1–C6 | felt252 thinking, storage hunting, L1↔L2 surface, reentrancy, serialization, access control |
 | **Algorand/PyTeal** | ~2,456 | 1–10 | Algorand A1–A9 | Transaction field hunting, group thinking, inner tx fee, clear state paranoia, smart sig, asset opt-in |
+| **NEMESIS** | Cross-ecosystem | N/A | Feynman (7 categories) + State Inconsistency (8 phases) | First-principles reasoning, coupled state mapping, iterative cross-feed loop, multi-tx journey tracing |
 
 ### ClaudeSkills Integration
 
@@ -130,8 +143,9 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
-| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (reference files) | Slash command invoking 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
+| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (skill files + references) | Orchestrator SKILL.md + 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
 | **docs-for-humans-and-ai** | Diataxis + llmstxt.org standard | All 7 CLAUDE.md files + llms.txt + llms-full.txt + build script | Dual-audience formatting, LOCAL CUSTOMIZATIONS marker, AI-consumable docs standard (Cyfrin claude-docs-prompts) |
+| **NEMESIS** | Feynman Auditor (7 question categories) + State Inconsistency Auditor (8 phases) + iterative loop orchestrator | All 6 ecosystem CommandInstruction files (optional Phase 0 / 0.5) | 100% precision, 52.9% Sherlock coverage, language-agnostic iterative reasoning, coupled state dependency mapping, cross-feed discovery, masking code detection |
 
 ## Key Concepts (Universal)
 
@@ -220,6 +234,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.1 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK)
+**Framework Version:** 3.2 (SolidityEVM — NEMESIS), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK), 1.0 (NEMESIS)
 **Last Updated:** March 2026
 **License:** MIT

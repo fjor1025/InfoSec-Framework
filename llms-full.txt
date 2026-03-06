@@ -1,7 +1,7 @@
 # InfoSec-Framework — Full Content
 
 > Auto-generated concatenation of all framework files for AI consumption.
-> Generated: 2026-03-06 16:16:06 UTC
+> Generated: 2026-03-06 23:11:42 UTC
 
 ================================================================
 FILE: README.md
@@ -45,6 +45,9 @@ audit-assistant-playbook/
 │   ├── audit-workflow1.md                 <- Manual audit methodology + Pashov 170-vector cross-ref
 │   ├── audit-workflow2.md                 <- Semantic phase analysis
 │   └── pashov-skills/                     <- Pashov Audit Group integration
+│       ├── CLAUDE.md                      <- AI agent context
+│       ├── SKILL.md                       <- Orchestrator (discovers files, spawns agents, merges report)
+│       ├── VERSION                        <- Upstream version tracker
 │       ├── README.md                      <- Integration overview
 │       ├── finding-validation.md          <- FP gate + confidence scoring
 │       ├── report-formatting.md           <- Output template
@@ -86,6 +89,15 @@ audit-assistant-playbook/
 │   ├── CommandInstruction-Algorand.md     <- Binding architecture + 6 Algorand lenses
 │   └── Algorand-Audit-Methodology.md      <- Methodology + ClaudeSkills A1–A9 patterns
 │
+├── Nemesis/                               <- NEMESIS iterative reasoning auditor (language-agnostic)
+│   ├── CLAUDE.md                          <- AI agent context
+│   ├── README.md                          <- Architecture, benchmark, usage
+│   ├── NEMESIS_INTEGRATION.md             <- Per-ecosystem integration status
+│   └── skills/                            <- Actual SKILL.md files (copied from nemesis-auditor)
+│       ├── nemesis-auditor/SKILL.md       <- Orchestrator (iterative loop)
+│       ├── feynman-auditor/SKILL.md       <- First-principles logic bug finder
+│       └── state-inconsistency-auditor/SKILL.md <- Coupled state desync detector
+│
 └── ClaudeSkills/                          <- Trail of Bits vulnerability patterns (submodule)
     └── plugins/building-secure-contracts/skills/
     │   ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
@@ -123,6 +135,7 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
 | **Cairo/StarkNet** | ~2,703 | 1–10 | Cairo C1–C6 | felt252 thinking, storage hunting, L1↔L2 surface, reentrancy, serialization, access control |
 | **Algorand/PyTeal** | ~2,456 | 1–10 | Algorand A1–A9 | Transaction field hunting, group thinking, inner tx fee, clear state paranoia, smart sig, asset opt-in |
+| **NEMESIS** | Cross-ecosystem | N/A | Feynman (7 categories) + State Inconsistency (8 phases) | First-principles reasoning, coupled state mapping, iterative cross-feed loop, multi-tx journey tracing |
 
 ### ClaudeSkills Integration
 
@@ -139,8 +152,9 @@ All vulnerability patterns from `ClaudeSkills/plugins/building-secure-contracts/
 | **Safe Solana Builder** | 8 patterns (SSB1–SSB8), 17 rules (SSB-CPI + SSB-ANC) | Rust CommandInstruction + Methodology + Playbook | Frank Castle (70+ Rust audits, 250+ Critical/High) — CPI safety surface, Anchor pitfalls, Token-2022 compatibility, native Rust 6-step validation, Curiosity Principle (6 adversarial questions) |
 | Cairo | 723+ lines | Cairo CommandInstruction + Methodology | felt252, L1 handler, storage layout, signature replay |
 | Algorand | 406+ lines | Algorand CommandInstruction + Methodology | Rekey, close, group size, inner tx fee, clear state |
-| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (reference files) | Slash command invoking 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
+| **solidity-auditor** (`/solidity-auditor`) | SKILL.md + VERSION | SolidityEVM → pashov-skills/ (skill files + references) | Orchestrator SKILL.md + 4–5 parallel agents; `pashov-skills/` is `{resolved_path}`; `finding-validation.md` replaces `judging.md` |
 | **docs-for-humans-and-ai** | Diataxis + llmstxt.org standard | All 7 CLAUDE.md files + llms.txt + llms-full.txt + build script | Dual-audience formatting, LOCAL CUSTOMIZATIONS marker, AI-consumable docs standard (Cyfrin claude-docs-prompts) |
+| **NEMESIS** | Feynman Auditor (7 question categories) + State Inconsistency Auditor (8 phases) + iterative loop orchestrator | All 6 ecosystem CommandInstruction files (optional Phase 0 / 0.5) | 100% precision, 52.9% Sherlock coverage, language-agnostic iterative reasoning, coupled state dependency mapping, cross-feed discovery, masking code detection |
 
 ## Key Concepts (Universal)
 
@@ -229,7 +243,7 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.1 (SolidityEVM), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK)
+**Framework Version:** 3.2 (SolidityEVM — NEMESIS), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK), 1.0 (NEMESIS)
 **Last Updated:** March 2026
 **License:** MIT
 
@@ -259,12 +273,15 @@ InfoSec-Framework/
 ├── llms.txt                               ← AI index (page list with descriptions)
 ├── llms-full.txt                          ← AI ingest (full concatenated content)
 │
-├── SolidityEVM/                           ← Benchmark framework (v3.1)
+├── SolidityEVM/                           ← Benchmark framework (v3.2)
 │   ├── CommandInstruction.md              ← System prompt (binding rules)
 │   ├── audit-workflow1.md                 ← Manual methodology + 170-vector Pashov
 │   ├── audit-workflow2.md                 ← Semantic phase analysis (SNAPSHOT→COMMIT)
 │   ├── Audit_Assistant_Playbook.md        ← Conversation structure (19 SCAN prompts)
 │   └── pashov-skills/                     ← Pashov Audit Group integration
+│       ├── CLAUDE.md                      ← AI agent context
+│       ├── SKILL.md                       ← Orchestrator (spawns agents, merges report)
+│       ├── VERSION                        ← Upstream version tracker
 │       ├── finding-validation.md          ← FP gate + confidence scoring
 │       ├── report-formatting.md           ← Output template
 │       ├── agents/                        ← Vector-scan + adversarial agent instructions
@@ -276,6 +293,15 @@ InfoSec-Framework/
 ├── Cairo-StarkNet/                        ← StarkNet L2
 ├── Algorand-PyTeal/                       ← PyTeal / TEAL
 │   (each contains CLAUDE.md + README.md + CommandInstruction + Methodology + Playbook)
+│
+├── Nemesis/                               ← NEMESIS iterative reasoning auditor (language-agnostic)
+│   ├── CLAUDE.md                          ← AI agent context
+│   ├── README.md                          ← Architecture, benchmark, usage
+│   ├── NEMESIS_INTEGRATION.md             ← Per-ecosystem integration status
+│   └── skills/                            ← Actual SKILL.md files (copied from nemesis-auditor)
+│       ├── nemesis-auditor/SKILL.md       ← Orchestrator (iterative loop)
+│       ├── feynman-auditor/SKILL.md       ← First-principles logic bug finder
+│       └── state-inconsistency-auditor/SKILL.md ← Coupled state desync detector
 │
 ├── ClaudeSkills/                          ← Trail of Bits vulnerability patterns + plugins
 │   └── plugins/
@@ -421,9 +447,10 @@ plugins/plugin-name/
 |--------|-----------------|-----------------|
 | [evmresearch.io](https://evmresearch.io) | 300+ notes, 6 knowledge areas | SolidityEVM v3.0 |
 | [QuillAudits Claude Skills V1](https://github.com/quillai-network/qs_skills) | 10 audit skills | SolidityEVM v2.1+ |
-| [Pashov Audit Group](https://github.com/pashov/skills) | 170 attack vectors, parallelized agents | SolidityEVM v3.1 |
+| [Pashov Audit Group](https://github.com/pashov/skills) | 170 attack vectors, parallelized agents, SKILL.md orchestrator | SolidityEVM v3.1+ |
 | [Trail of Bits](https://github.com/trailofbits/publications) | ClaudeSkills vulnerability scanners | All ecosystems |
 | [Cyfrin claude-docs-prompts](https://github.com/Cyfrin/claude-docs-prompts) | Docs-for-humans-and-AI standard | This CLAUDE.md + docs-for-humans-and-ai skill |
+| [NEMESIS Auditor](https://github.com/sainikethan/nemesis-auditor) | Iterative deep-reasoning audit agent (Feynman + State Inconsistency loop) | All 6 ecosystem CommandInstruction files + Nemesis/ |
 
 <!-- LOCAL CUSTOMIZATIONS — everything below this line is preserved on update -->
 
@@ -1199,6 +1226,32 @@ Files: `CommandInstruction-Cosmos.md`, `Cosmos-SDK-Security-Audit-Methodology.md
 
 ## Remaining Work
 
+### NEMESIS Iterative Reasoning Auditor (v1.0 — Integrated)
+
+NEMESIS is a language-agnostic iterative audit agent that complements all pattern-matching integrations above. Instead of scanning for known vulnerability patterns, it reasons from first principles and maps coupled state dependencies.
+
+**Source:** [nemesis-auditor](https://github.com/sainikethan/nemesis-auditor) — MIT License
+
+**Benchmark (Sherlock contest):**
+
+| Metric | Pashov Skills | NEMESIS | Combined |
+|--------|---------------|---------|----------|
+| Precision | 83.3% | 100% | 93.3% |
+| Sherlock coverage | 17.6% (3/17) | 52.9% (9/17) | 52.9% |
+| False positives | 1 | 0 | 1 |
+
+**Sub-agents:**
+
+| Agent | Methodology | What It Finds |
+|-------|-------------|---------------|
+| **Feynman Auditor** | 7 question categories (28+ questions per function) | Business logic bugs via first-principles reasoning |
+| **State Inconsistency Auditor** | 8-phase coupled state analysis | State desync where one side updates without its counterpart |
+| **Iterative Loop** | Alternating passes until convergence (max 6) | Cross-feed bugs at the intersection of logic and state |
+
+**Integration:** Added as optional Phase 0 (or Phase 0.5 after Pashov in Solidity) in all 6 ecosystem CommandInstruction files. Triggered by `[AUDIT AGENT: NEMESIS Deep Audit]`. See [Nemesis/NEMESIS_INTEGRATION.md](Nemesis/NEMESIS_INTEGRATION.md) for per-ecosystem details.
+
+---
+
 ### TON/FunC (Not Started)
 The ClaudeSkills repository contains a TON vulnerability scanner with 596+ lines of patterns for FunC smart contracts. No audit framework exists for TON yet.
 
@@ -1250,7 +1303,7 @@ FILE: SolidityEVM/README.md
 
 # Solidity/EVM Audit Framework
 
-> **Version:** 3.1 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), and **[Pashov Audit Group](https://github.com/pashov/skills) 170-vector parallelized scan**
+> **Version:** 3.2 — Integrated with [evmresearch.io](https://evmresearch.io) knowledge graph (300+ notes, 6 knowledge areas), QuillAudits Claude Skills V1 patterns, OWASP SC Top 10 (2025), **[Pashov Audit Group](https://github.com/pashov/skills) 170-vector parallelized scan**, and **[NEMESIS](https://github.com/sainikethan/nemesis-auditor) iterative deep-reasoning auditor**
 > **Ecosystem:** Solidity smart contracts on EVM-compatible chains (Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)
 
 ---
@@ -1312,9 +1365,9 @@ Patterns from [QuillAudits open-source Claude Skills](https://github.com/quillai
 | [audit-workflow1.md](audit-workflow1.md) | ~1150 | Manual audit methodology — 7 phases, 11 attack categories, 40+ known exploits, AA/CPIMP/L2/transient storage, Pashov 170-vector cross-reference |
 | [audit-workflow2.md](audit-workflow2.md) | ~620 | Semantic phase analysis — SNAPSHOT→ACCOUNTING→VALIDATION→MUTATION→COMMIT + Phase 8: Specification Completeness |
 | [Audit_Assistant_Playbook.md](Audit_Assistant_Playbook.md) | ~1960 | Conversation structure — 10 sections, 19 SCAN prompts, Pashov Parallelized Scan agent |
-| [pashov-skills/](pashov-skills/) | ~700 | Pashov Audit Group integration — 170 attack vectors, FP gates, confidence scoring, agent instructions |
+| [pashov-skills/](pashov-skills/) | ~1,300 | Pashov Audit Group integration — SKILL.md orchestrator, 170 attack vectors, FP gates, confidence scoring, agent instructions |
 
-**Total: ~4,630 lines**
+**Total: ~5,230 lines**
 
 ---
 
@@ -1492,7 +1545,8 @@ You are a senior smart contract security auditor. Your analysis and reporting MU
 You MUST treat the following files as the definitive source of audit methodology, steps, and heuristics:
 - #file:audit-workflow1.md — Manual audit phases, checklists, attack vectors, OWASP SC Top 10 coverage, expanded exploit database (2016–2025), Account Abstraction / CPIMP / Transient Storage / L2 security, **Pashov 170-vector attack surface (Step 5.2b)**
 - #file:audit-workflow2.md — Semantic phase analysis (SNAPSHOT→COMMIT), Semantic Guard Analysis, State Invariant Detection, Compiler Verification, Specification Completeness Analysis
-- **pashov-skills/** — Pashov Audit Group parallelized scan: 170 atomic attack vectors with FP gates, confidence scoring, vector scan + adversarial reasoning agent instructions
+- **pashov-skills/SKILL.md** — Pashov Audit Group orchestrator: spawns 4–5 parallel agents against 170 atomic attack vectors with FP gates, confidence scoring, and merged deduplication; see `pashov-skills/` directory for agent instructions and vector files
+- **Nemesis/skills/** — NEMESIS iterative deep-reasoning audit (Feynman Auditor + State Inconsistency Auditor in alternating loop); see [Nemesis/NEMESIS_INTEGRATION.md](../Nemesis/NEMESIS_INTEGRATION.md) for integration rules
 
 ### CONVERSATION STRUCTURE (from Audit_Assistant_Playbook.md)
 When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
@@ -1504,6 +1558,7 @@ When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 | **Code Path Explorer** | `[AUDIT AGENT: Code Path Explorer]` | Validate one hypothesis | Valid/Invalid/Inconclusive with semantic trace |
 | **Adversarial Reviewer** | `[AUDIT AGENT: Adversarial Reviewer]` | Triage a finding | Assessment with counterarguments |
 | **Pashov Parallelized Scan** | `[AUDIT AGENT: Pashov Parallelized Scan]` | Fast 170-vector scan | Confidence-scored findings, merged & deduplicated |
+| **NEMESIS Deep Audit** | `[AUDIT AGENT: NEMESIS Deep Audit]` | Iterative Feynman + State Inconsistency loop | Verified findings in .audit/findings/nemesis-verified.md |
 
 **Role Activation Rules:**
 - When a role is invoked, follow its exact output format from the Playbook
@@ -1549,6 +1604,7 @@ When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 - "[ ] Token integration assumptions verified (non-standard behaviors)" [audit-workflow1.md, Step 5.1d]
 - "[ ] Developer assumption inventory completed" [audit-workflow2.md, Step 7.5]
 - "[ ] Pashov 170-vector triage completed (Skip/Borderline/Survive)" [audit-workflow1.md, Step 5.2b]
+- "[ ] NEMESIS iterative audit completed (optional, for complex state/logic)" [Nemesis/NEMESIS_INTEGRATION.md]
 
 ### ALIGNMENT GATE — STOP BEFORE EXECUTING
 
@@ -1601,6 +1657,15 @@ Use this sequence for a complete audit:
 │    └─ Output: Confidence-scored findings from 170 vectors       │
 │    └─ Methodology: pashov-skills/agents/ + attack-vectors/      │
 │    └─ Feed results into Phase 2 as confirmed signal             │
+├─────────────────────────────────────────────────────────────────┤
+│ PHASE 0.5: DEEP REASONING (optional, for complex logic/state)   │
+│ └─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│    └─ Feynman Auditor: first-principles logic interrogation    │
+│    └─ State Inconsistency Auditor: coupled state desync mapping │
+│    └─ Iterative loop until convergence (max 6 passes)          │
+│    └─ Output: .audit/findings/nemesis-verified.md               │
+│    └─ Feed results into Phase 2 alongside Pashov findings      │
+│    └─ See: Nemesis/NEMESIS_INTEGRATION.md                      │
 ├─────────────────────────────────────────────────────────────────┤
 │ PHASE 1: UNDERSTANDING                                          │
 │ └─ Invoke: [AUDIT AGENT: Protocol Mapper]                       │
@@ -5555,6 +5620,51 @@ Add a block at the end:
 **"Short Version (up to 10)" lines)"** — so I can insert it as the starting context in a new chat.
 
 ================================================================
+FILE: SolidityEVM/pashov-skills/CLAUDE.md
+================================================================
+
+<!-- Managed by docs-for-humans-and-ai skill -->
+
+# Pashov Skills
+
+Pashov Audit Group's parallelized smart contract security audit system. Spawns 4–5 agents scanning 170 atomic attack vectors with confidence scoring and FP gates.
+
+**Before making changes**, read [README.md](README.md) and the parent framework's [CLAUDE.md](../CLAUDE.md).
+
+## Directory Contents
+
+| File | Purpose |
+|------|---------|
+| [SKILL.md](SKILL.md) | Orchestrator — discovers files, spawns agents, merges report |
+| [VERSION](VERSION) | Upstream version tracker |
+| [README.md](README.md) | Integration overview, comparison with InfoSec Framework |
+| [finding-validation.md](finding-validation.md) | FP gate (3 checks) + confidence scoring (adapted from upstream `judging.md`) |
+| [report-formatting.md](report-formatting.md) | Output template for scan reports |
+| [agents/vector-scan-agent.md](agents/vector-scan-agent.md) | Agents 1–4 (Sonnet) — vector scanning instructions |
+| [agents/adversarial-reasoning-agent.md](agents/adversarial-reasoning-agent.md) | Agent 5 (Opus) — adversarial reasoning (DEEP mode only) |
+| [attack-vectors/attack-vectors-1.md](attack-vectors/attack-vectors-1.md) | Vectors 1–42 |
+| [attack-vectors/attack-vectors-2.md](attack-vectors/attack-vectors-2.md) | Vectors 43–85 |
+| [attack-vectors/attack-vectors-3.md](attack-vectors/attack-vectors-3.md) | Vectors 86–128 |
+| [attack-vectors/attack-vectors-4.md](attack-vectors/attack-vectors-4.md) | Vectors 129–170 |
+
+## Key Facts
+
+- **Solidity-only**: Designed for EVM smart contracts
+- **Trigger**: `[AUDIT AGENT: Pashov Parallelized Scan]` or `/solidity-auditor` slash command
+- **Position**: Runs as Phase 0 (fast scan) before Phase 1 Understanding
+- **Source skills**: Copied from [Pashov Audit Group Skills](https://github.com/pashov/skills) with framework adaptations
+- **Output**: Confidence-scored findings, merged & deduplicated
+- **Adaptations from upstream**: `judging.md` → `finding-validation.md` (adds InfoSec validation alignment), agent files add cross-reference headers and framework role mappings
+- **Validation**: Findings pass the same 4 mandatory checks as all framework findings (Reachability, State Freshness, Execution Closure, Economic Realism) via confidence scoring
+
+## Integration Rule
+
+Pashov is **additive** — it supplements, never replaces, existing SolidityEVM methodology. Its findings feed into the framework's Hypothesis Generator as confirmed signal, identical to how NEMESIS results are consumed.
+
+<!-- LOCAL CUSTOMIZATIONS — everything below this line is preserved on update -->
+
+
+================================================================
 FILE: SolidityEVM/pashov-skills/README.md
 ================================================================
 
@@ -5607,6 +5717,9 @@ A parallelized smart contract security audit system built by [Pashov Audit Group
 
 ```
 pashov-skills/
+├── CLAUDE.md                          # AI agent context
+├── SKILL.md                           # Orchestrator (discovers files, spawns agents, merges report)
+├── VERSION                            # Upstream version tracker
 ├── README.md                          # This file
 ├── finding-validation.md              # FP gate + confidence scoring
 ├── report-formatting.md               # Output format for scan reports
@@ -5653,6 +5766,83 @@ pashov-skills/
 ## Attribution
 
 Built by [Pashov Audit Group](https://www.pashov.com/). [MIT License](https://github.com/pashov/skills/blob/main/LICENSE).
+
+
+================================================================
+FILE: SolidityEVM/pashov-skills/SKILL.md
+================================================================
+
+---
+name: solidity-auditor
+description: Security audit of Solidity code while you develop. Trigger on "audit", "check this contract", "review for security". Modes - default (full repo), DEEP (+ adversarial reasoning), or a specific filename.
+---
+
+> **Source:** [Pashov Audit Group Skills](https://github.com/pashov/skills) — MIT Licensed
+> **Cross-Reference:** Orchestrates agents in `agents/` with vectors from `attack-vectors/` and FP gate from `finding-validation.md`
+
+# Smart Contract Security Audit
+
+You are the orchestrator of a parallelized smart contract security audit. Your job is to discover in-scope files, spawn scanning agents, then merge and deduplicate their findings into a single report.
+
+## Mode Selection
+
+**Exclude pattern** (applies to all modes): skip directories `interfaces/`, `lib/`, `mocks/`, `test/` and files matching `*.t.sol`, `*Test*.sol` or `*Mock*.sol`.
+
+- **Default** (no arguments): scan all `.sol` files using the exclude pattern. Use Bash `find` (not Glob) to discover files.
+- **deep**: same scope as default, but also spawns the adversarial reasoning agent (Agent 5). Use for thorough reviews. Slower and more costly.
+- **`$filename ...`**: scan the specified file(s) only.
+
+**Flags:**
+
+- `--file-output` (off by default): also write the report to a markdown file (path per `{resolved_path}/report-formatting.md`). Without this flag, output goes to the terminal only. Never write a report file unless the user explicitly passes `--file-output`.
+
+## Version Check
+
+After printing the banner, run two parallel tool calls: (a) Read the local `VERSION` file from the same directory as this skill, (b) Bash `curl -sf https://raw.githubusercontent.com/pashov/skills/main/solidity-auditor/VERSION`. If the remote fetch succeeds and the versions differ, print:
+
+> ⚠️ You are not using the latest version. Please upgrade for best security coverage. See https://github.com/pashov/skills#install--run
+
+Then continue normally. If the fetch fails (offline, timeout), skip silently.
+
+## Orchestration
+
+**Turn 1 — Discover.** Print the banner, then in the same message make parallel tool calls: (a) Bash `find` for in-scope `.sol` files per mode selection, (b) Glob for `**/pashov-skills/attack-vectors/attack-vectors-1.md` and extract the `pashov-skills/` directory path. Use this resolved path as `{resolved_path}` for all subsequent references.
+
+**Turn 2 — Prepare.** In a single message, make three parallel tool calls: (a) Read `{resolved_path}/agents/vector-scan-agent.md`, (b) Read `{resolved_path}/report-formatting.md`, (c) Bash: create four per-agent bundle files (`/tmp/audit-agent-{1,2,3,4}-bundle.md`) in a **single command** — each concatenates **all** in-scope `.sol` files (with `### path` headers and fenced code blocks), then `{resolved_path}/finding-validation.md`, then `{resolved_path}/report-formatting.md`, then `{resolved_path}/attack-vectors/attack-vectors-N.md`; print line counts. Every agent receives the full codebase — only the attack-vectors file differs per agent. Do NOT read or inline any file content into agent prompts — the bundle files replace that entirely.
+
+**Turn 3 — Spawn.** In a single message, spawn all agents as parallel foreground Agent tool calls (do NOT use `run_in_background`). Always spawn Agents 1–4. Only spawn Agent 5 when the mode is **DEEP**.
+
+- **Agents 1–4** (vector scanning) — spawn with `model: "sonnet"`. Each agent prompt must contain the full text of `vector-scan-agent.md` (read in Turn 2, paste into every prompt). After the instructions, add: `Your bundle file is /tmp/audit-agent-N-bundle.md (XXXX lines).` (substitute the real line count).
+- **Agent 5** (adversarial reasoning, DEEP only) — spawn with `model: "opus"`. Receives the in-scope `.sol` file paths and the instruction: your reference directory is `{resolved_path}`. Read `{resolved_path}/agents/adversarial-reasoning-agent.md` for your full instructions.
+
+**Turn 4 — Report.** Merge all agent results: deduplicate by root cause (keep the higher-confidence version), sort by confidence highest-first, re-number sequentially, and insert the **Below Confidence Threshold** separator row. Print findings directly — do not re-draft or re-describe them. Use report-formatting.md (read in Turn 2) for the scope table and output structure. If `--file-output` is set, write the report to a file (path per report-formatting.md) and print the path.
+
+## Relationship to InfoSec Framework
+
+| SKILL.md Orchestration Step | InfoSec Framework Equivalent |
+|-----------------------------|------------------------------|
+| Turn 1 — Discover in-scope files | Phase 0 — `[AUDIT AGENT: Pashov Parallelized Scan]` invocation |
+| Turn 2 — Bundle creation | Reference file assembly — `finding-validation.md` replaces `judging.md` |
+| Turn 3 — Agent 1–4 vector scan | 170-vector triage per `[audit-workflow1.md, Step 5.2b]` |
+| Turn 3 — Agent 5 adversarial | Complements Code Path Explorer + Adversarial Reviewer roles |
+| Turn 4 — Merged report | Feeds into Phase 2 Hypothesis Generation as confirmed signal |
+
+When invoked via `[AUDIT AGENT: Pashov Parallelized Scan]`, the orchestration runs as Phase 0 of the full audit workflow. Results feed directly into Phase 2 (Hypothesis Generation) — high-confidence findings become confirmed hypotheses, while below-threshold findings become candidates for manual validation.
+
+## Banner
+
+Before doing anything else, print this exactly:
+
+```
+
+██████╗  █████╗ ███████╗██╗  ██╗ ██████╗ ██╗   ██╗     ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+██╔══██╗██╔══██╗██╔════╝██║  ██║██╔═══██╗██║   ██║     ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+██████╔╝███████║███████╗███████║██║   ██║██║   ██║     ███████╗█████╔╝ ██║██║     ██║     ███████╗
+██╔═══╝ ██╔══██║╚════██║██╔══██║██║   ██║╚██╗ ██╔╝     ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+██║     ██║  ██║███████║██║  ██║╚██████╔╝ ╚████╔╝      ███████║██║  ██╗██║███████╗███████╗███████║
+╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═══╝       ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+
+```
 
 
 ================================================================
@@ -8713,6 +8903,16 @@ Use this sequence for a complete audit:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│ PHASE 0: DEEP REASONING (optional, for complex logic/state)     │
+│ └─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│    └─ Feynman Auditor: first-principles logic interrogation    │
+│    └─ State Inconsistency Auditor: coupled state desync mapping │
+│    └─ Iterative loop until convergence (max 6 passes)          │
+│    └─ Language-agnostic: adapts to Rust/Solana/CosmWasm/Sub    │
+│    └─ Output: .audit/findings/nemesis-verified.md               │
+│    └─ Feed results into Phase 2 as confirmed signal             │
+│    └─ See: Nemesis/NEMESIS_INTEGRATION.md                      │
+├─────────────────────────────────────────────────────────────────┤
 │ PHASE 1: UNDERSTANDING                                          │
 │ └─ Invoke: [AUDIT AGENT: Protocol Mapper]                       │
 │    └─ Output: Protocol model with assets, flows, invariants     │
@@ -13710,6 +13910,14 @@ Apply these lenses to EVERY function you analyze:
 │               GO SMART CONTRACT AUDIT FLOW              │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)             │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]             │
+│  ├─ Feynman + State Inconsistency iterative loop          │
+│  ├─ Language-agnostic: adapts to Go/Cosmos                │
+│  ├─ Output: .audit/findings/nemesis-verified.md            │
+│  ├─ Feed results into Phase 2 hypothesis generation       │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                   │
+│                                                         │
 │  Phase 1: EXPLORATION (Protocol Mapper)                 │
 │  ├─ Map keeper structure, module interactions            │
 │  ├─ Identify message flow (CheckTx → DeliverTx/          │
@@ -17257,6 +17465,15 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) {
 ┌──────────────────────────────────────────────────────────┐
 │           COSMOS-SDK SECURITY AUDIT FLOW                  │
 ├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)              │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]              │
+│  ├─ Feynman + State Inconsistency iterative loop           │
+│  ├─ Language-agnostic: adapts to Go/Cosmos SDK              │
+│  ├─ Coupled state map enriches cross-module invariants      │
+│  ├─ Output: .audit/findings/nemesis-verified.md             │
+│  ├─ Feed results into Phase 3 hypothesis generation        │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                    │
 │                                                          │
 │  Phase 1: ARCHITECTURE MAPPING                           │
 │  ├─ Map modules, keepers, ABCI hooks                     │
@@ -21010,6 +21227,14 @@ When analyzing Cairo contracts, apply these six lenses:
 │                 CAIRO AUDIT WORKFLOW                            │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)                    │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│  ├─ Feynman + State Inconsistency iterative loop                │
+│  ├─ Language-agnostic: adapts to Cairo/StarkNet                 │
+│  ├─ Output: .audit/findings/nemesis-verified.md                  │
+│  ├─ Feed results into Phase 2 hypothesis generation             │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                         │
+│                                                                │
 │  Phase 1: EXPLORATION (Protocol Mapper)                        │
 │  ├─ Understand contract architecture                           │
 │  ├─ Map storage layout and external functions                  │
@@ -23640,6 +23865,14 @@ When analyzing Algorand contracts, apply these six lenses:
 │                ALGORAND AUDIT WORKFLOW                          │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
+│  Phase 0: DEEP REASONING (optional, NEMESIS)                    │
+│  ├─ Invoke: [AUDIT AGENT: NEMESIS Deep Audit]                   │
+│  ├─ Feynman + State Inconsistency iterative loop                │
+│  ├─ Language-agnostic: adapts to Algorand/PyTeal/TEAL            │
+│  ├─ Output: .audit/findings/nemesis-verified.md                  │
+│  ├─ Feed results into Phase 2 hypothesis generation             │
+│  └─ See: Nemesis/NEMESIS_INTEGRATION.md                         │
+│                                                                │
 │  Phase 1: EXPLORATION (Protocol Mapper)                        │
 │  ├─ Understand contract architecture                           │
 │  ├─ Map OnComplete handlers and entry points                   │
@@ -24196,5 +24429,2915 @@ Documentation follows the [docs-for-humans-and-ai](../ClaudeSkills/plugins/docs-
 **Last Updated:** February 2026
 **Target Ecosystems:** Algorand, PyTeal, TEAL, ARC4, Beaker
 **Enhanced with:** ClaudeSkills Trail of Bits patterns (A1–A9), InfoSec_Us_Team methodology
+
+
+================================================================
+FILE: Nemesis/CLAUDE.md
+================================================================
+
+<!-- Managed by docs-for-humans-and-ai skill -->
+
+# Nemesis
+
+NEMESIS is a language-agnostic iterative deep-reasoning audit agent. It runs two sub-auditors (Feynman Auditor + State Inconsistency Auditor) in an alternating feedback loop until convergence.
+
+**Before making changes**, read [README.md](README.md), [NEMESIS_INTEGRATION.md](NEMESIS_INTEGRATION.md), and the root [CLAUDE.md](../CLAUDE.md).
+
+## Directory Contents
+
+| File | Purpose |
+|------|---------|
+| [README.md](README.md) | Architecture, usage, benchmark results, output format |
+| [NEMESIS_INTEGRATION.md](NEMESIS_INTEGRATION.md) | Per-ecosystem integration status and feed-forward rules |
+| [skills/nemesis-auditor/SKILL.md](skills/nemesis-auditor/SKILL.md) | Orchestrator — runs the iterative Feynman ↔ State loop |
+| [skills/feynman-auditor/SKILL.md](skills/feynman-auditor/SKILL.md) | First-principles logic bug finder (7 question categories) |
+| [skills/state-inconsistency-auditor/SKILL.md](skills/state-inconsistency-auditor/SKILL.md) | Coupled state desync detector (8 phases) |
+
+## Key Facts
+
+- **Language-agnostic**: Works on Solidity, Move, Rust, Go, C++, Python, TypeScript
+- **Trigger**: `[AUDIT AGENT: NEMESIS Deep Audit]` or `/nemesis` slash command
+- **Position**: Runs as an optional deep-reasoning phase before hypothesis generation
+- **Source skills**: Located in `Nemesis/skills/` (copied from [nemesis-auditor](https://github.com/sainikethan/nemesis-auditor) with path updates)
+- **Output**: `.audit/findings/nemesis-verified.md`
+- **Validation**: Findings pass the same 4 mandatory checks as all framework findings (Reachability, State Freshness, Execution Closure, Economic Realism)
+
+## Integration Rule
+
+NEMESIS is **additive** — it supplements, never replaces, existing ecosystem methodology. Its findings feed into the framework's Hypothesis Generator as confirmed signal, identical to how Pashov scan results are consumed.
+
+<!-- LOCAL CUSTOMIZATIONS — everything below this line is preserved on update -->
+
+
+================================================================
+FILE: Nemesis/NEMESIS_INTEGRATION.md
+================================================================
+
+# NEMESIS Integration Status
+
+> **Purpose:** Track how NEMESIS iterative reasoning is wired into each ecosystem framework.
+> **Status:** v1.0 — All 6 ecosystem frameworks updated with NEMESIS phase hook.
+> **Source:** [nemesis-auditor](https://github.com/sainikethan/nemesis-auditor) — MIT License
+
+---
+
+## Integration Model
+
+NEMESIS integrates as an **optional deep-reasoning phase** in each ecosystem's audit workflow. It does NOT replace any existing phase — it adds a new one.
+
+### How Findings Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  NEMESIS produces:                                              │
+│  ├─ Verified findings (NEM-001, NEM-002, ...)                   │
+│  ├─ Suspects (functions/state needing further investigation)    │
+│  ├─ Coupled State Dependency Map                                │
+│  └─ Cross-feed discovery paths                                  │
+│                                                                  │
+│  Framework consumes:                                             │
+│  ├─ Findings → feed into Hypothesis Generator as confirmed      │
+│  │             signal (same as Pashov scan results)              │
+│  ├─ Suspects → become hypotheses for Code Path Explorer         │
+│  ├─ Coupled State Map → enriches Protocol Mapper output         │
+│  └─ Discovery paths → tag findings for report attribution       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Per-Ecosystem Integration
+
+### SolidityEVM
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0.5 — after Pashov fast scan, before Phase 1 Understanding |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS findings merge with Pashov findings into Phase 2 hypotheses |
+| **Complementarity** | Pashov catches pattern-match vectors; NEMESIS catches reasoning + state coupling bugs |
+
+### Rust (CosmWasm / Solana / Substrate)
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0 — before Phase 1 Understanding |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction-Rust.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS findings feed into Phase 2 hypotheses |
+| **Complementarity** | Framework catches Rust-specific patterns (ownership, CPI, panic); NEMESIS catches logic + state coupling |
+
+### Go (Cosmos SDK / IBC / CometBFT)
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0 — before Phase 1 Exploration |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction-Go.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS findings feed into Phase 2 hypotheses |
+| **Complementarity** | Framework catches Go/Cosmos patterns (C1–C6, ABCI); NEMESIS catches logic + state coupling |
+
+### Cosmos-SDK (Chain-Level)
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0 — before Phase 1 Architecture Mapping |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction-Cosmos.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS coupled state map enriches cross-module invariant analysis |
+| **Complementarity** | Framework catches governance/consensus/IBC; NEMESIS catches module state coupling bugs |
+
+### Cairo (StarkNet)
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0 — before Phase 1 Exploration |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction-Cairo.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS findings feed into Phase 2 hypotheses |
+| **Complementarity** | Framework catches Cairo patterns (felt252, L1↔L2, C1–C6); NEMESIS catches logic + state coupling |
+
+### Algorand (PyTeal / TEAL)
+
+| Aspect | Detail |
+|--------|--------|
+| **Phase position** | Phase 0 — before Phase 1 Exploration |
+| **Trigger** | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Files modified** | `CommandInstruction-Algorand.md` — AUDIT WORKFLOW INTEGRATION section |
+| **Feed-forward** | NEMESIS findings feed into Phase 2 hypotheses |
+| **Complementarity** | Framework catches Algorand patterns (A1–A9, rekey, groups); NEMESIS catches logic + state coupling |
+
+---
+
+## What NEMESIS Adds to Each Framework
+
+| Aspect | Before NEMESIS | After NEMESIS |
+|--------|---------------|--------------|
+| **Logic bug coverage** | Hypothesis-driven (human generates hypotheses) | Systematic first-principles interrogation of every function |
+| **State coupling analysis** | Manual invariant detection via semantic phases | Automated coupled state dependency mapping + mutation matrix |
+| **Cross-cutting bugs** | Found if auditor hypothesizes them | Found by iterative cross-feed between Feynman and State passes |
+| **Partial operation bugs** | Ad-hoc checking | Systematic parallel path comparison (withdraw vs liquidate vs emergency) |
+| **Defensive code masking** | Not specifically targeted | Explicit masking pattern detection (ternary clamps, min caps, try-catch) |
+| **Multi-tx state drift** | Time-dependent analysis in semantic phases | Explicit multi-step journey tracing with accumulated error analysis |
+
+---
+
+## Validation Gate Alignment
+
+NEMESIS findings are subject to the same framework validation requirements:
+
+| Framework Check | NEMESIS Equivalent |
+|----------------|-------------------|
+| **Reachability** | Phase 8 Verification Gate — code trace confirms execution path |
+| **State Freshness** | State Inconsistency Auditor Phase 6 — multi-step journey confirms current state |
+| **Execution Closure** | Feynman Category 7 — external call reordering models all callbacks |
+| **Economic Realism** | Phase 0 Recon Q0.1 — attack goals must be economically viable |
+
+NEMESIS findings that pass its own verification gate will also pass the framework's 4 mandatory validation checks.
+
+
+================================================================
+FILE: Nemesis/README.md
+================================================================
+
+# NEMESIS — Deep Iterative Reasoning Auditor
+
+> **Version:** 1.0 — Integrated into InfoSec-Framework
+> **Source:** [nemesis-auditor](https://github.com/sainikethan/nemesis-auditor) — MIT License
+> **Type:** Language-agnostic iterative audit agent (Solidity, Move, Rust, Go, C++, Python, TypeScript)
+> **Benchmark:** 100% precision, 52.9% Sherlock coverage (9/17 findings, 3/5 Highs, 6/12 Mediums)
+
+---
+
+## What This Is
+
+NEMESIS is an iterative deep-logic security audit agent that combines two complementary sub-auditors in an alternating feedback loop to find bugs that neither can catch alone.
+
+| Pass | Agent | What It Finds |
+|------|-------|---------------|
+| 1 | **Feynman Auditor** | Business logic bugs via first-principles questioning — every line challenged, every assumption exposed |
+| 2 | **State Inconsistency Auditor** | Coupled state desync bugs — maps every mutation path, finds gaps where one side updates without the other |
+| 3+ | **Alternating targeted passes** | Each pass feeds findings into the next until convergence (max 6 passes) |
+
+### How It Differs From Existing Framework Tools
+
+| Aspect | InfoSec Framework (Existing) | Pashov Skills (Solidity) | NEMESIS (New) |
+|--------|------------------------------|--------------------------|---------------|
+| **Approach** | Structured hypothesis-driven audit | Parallelized vector pattern scan | Iterative reasoning loop |
+| **Strength** | Methodology + ecosystem-specific lenses | Broad coverage of 170 known vectors | Deep logic + state coupling bugs |
+| **Language** | Per-ecosystem (Solidity, Rust, Go, Cairo, Algorand) | Solidity only | Language-agnostic |
+| **Finding type** | Manual hypothesis validation | Known vulnerability patterns | Unknown bugs from reasoning |
+| **Best for** | Full audit lifecycle | Fast triage, pre-audit scan | Complex business logic, coupled state |
+
+### Sherlock Benchmark Comparison
+
+| Metric | Pashov Skills | NEMESIS | Combined |
+|--------|---------------|---------|----------|
+| **Total findings** | 6 | 11 | 14 unique |
+| **True positives** | 5 | 11 | 14 |
+| **False positives** | 1 | 0 | 1 |
+| **Precision** | 83.3% | 100% | 93.3% |
+| **Sherlock coverage** | 17.6% (3/17) | 52.9% (9/17) | 52.9% (9/17) |
+| **Highs matched** | 1/5 | 3/5 | 3/5 |
+| **Mediums matched** | 2/12 | 6/12 | 6/12 |
+
+---
+
+## Architecture
+
+NEMESIS is built from 3 Claude Code skills, now included in this directory:
+
+```
+Nemesis/
+├── CLAUDE.md                              # AI agent context
+├── README.md                              # This file
+├── NEMESIS_INTEGRATION.md                 # Per-ecosystem integration status
+└── skills/
+    ├── nemesis-auditor/
+    │   └── SKILL.md                       # The orchestrator — runs the iterative loop
+    ├── feynman-auditor/
+    │   └── SKILL.md                       # First-principles logic bug finder (7 question categories, 972 lines)
+    └── state-inconsistency-auditor/
+        └── SKILL.md                       # Coupled state desync detector (8 phases, 517 lines)
+```
+
+### Feynman Auditor — 7 Question Categories
+
+| Category | Core Question | What It Catches |
+|----------|--------------|-----------------|
+| 1. Purpose | WHY does this line exist? | Dead code, undocumented invariants |
+| 2. Ordering | What if I move this line? | Reentrancy, state gaps, race conditions |
+| 3. Consistency | WHY does A have this guard but B doesn't? | Missing access control, asymmetric validation |
+| 4. Assumptions | What is implicitly trusted? | Caller type, external data, state preconditions |
+| 5. Boundaries | What breaks at the edges? | First/last call, dust, empty state, self-reference |
+| 6. Return/Error | What happens on failure paths? | Ignored returns, silent failures, resource leaks |
+| 7. Call Reorder + Multi-Tx | Swap external calls + multi-tx state drift | CEI violations, stale state accumulation |
+
+### State Inconsistency Auditor — 8 Phases
+
+| Phase | What It Does |
+|-------|-------------|
+| 1. Map Coupled Pairs | Identify all state variables that must stay in sync |
+| 2. Find Mutations | List every function and path that modifies each state variable |
+| 3. Cross-Check | For each mutation of State A, verify State B is also updated |
+| 4. Ordering Analysis | Check operation ordering within functions for stale reads |
+| 5. Parallel Paths | Compare similar operations (withdraw vs liquidate) for consistency |
+| 6. Multi-Step Journeys | Trace user sequences for accumulated state drift |
+| 7. Masking Detection | Find defensive code that hides broken invariants |
+| 8. Verification Gate | Code trace + PoC for all Critical/High/Medium findings |
+
+---
+
+## Integration With InfoSec Framework
+
+NEMESIS integrates as an optional deep-reasoning phase in each ecosystem's audit workflow:
+
+| Ecosystem | Phase Position | Trigger |
+|-----------|---------------|---------|
+| **SolidityEVM** | Phase 0.5 — after Pashov fast scan, before hypothesis generation | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Rust** | Phase 0 — before hypothesis generation | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Go / Cosmos SDK** | Phase 0 — before hypothesis generation | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Cairo / StarkNet** | Phase 0 — before hypothesis generation | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+| **Algorand / PyTeal** | Phase 0 — before hypothesis generation | `[AUDIT AGENT: NEMESIS Deep Audit]` |
+
+### Combined Workflow (Solidity Example)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ PHASE 0: FAST SCAN — Pashov Parallelized Scan (pattern-match)   │
+│ PHASE 0.5: DEEP REASONING — NEMESIS Iterative Loop (logic+state)│
+│ PHASE 1: UNDERSTANDING — Protocol Mapper                        │
+│ PHASE 2: HYPOTHESIS — merge Pashov + NEMESIS + manual signals   │
+│ PHASE 3: DEEP VALIDATION — Code Path Explorer per hypothesis    │
+│ PHASE 4: FINDING DOCUMENTATION                                  │
+│ PHASE 5: ADVERSARIAL REVIEW                                     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### When to Use NEMESIS vs Pashov vs Manual
+
+| Situation | Recommended Tool |
+|-----------|-----------------|
+| Fast pre-audit triage (<2,500 SLOC Solidity) | Pashov Parallelized Scan |
+| Complex business logic, custom math, novel mechanisms | NEMESIS |
+| Deep manual audit with structured methodology | InfoSec Framework phases |
+| Maximum coverage (serious audit) | All three: Pashov → NEMESIS → Manual phases |
+| Non-Solidity codebase | NEMESIS (language-agnostic) + ecosystem-specific framework |
+
+---
+
+## Usage
+
+### Via Claude Code Slash Commands
+
+```
+/nemesis                        # Full iterative audit
+/nemesis --contract MyToken     # Audit a single contract/module
+/nemesis --pass1                # Only Feynman Auditor
+/nemesis --pass2                # Only State Inconsistency Auditor
+/nemesis --continue             # Resume interrupted audit
+/feynman                        # Feynman Auditor standalone
+/state-audit                    # State Inconsistency Auditor standalone
+```
+
+### Via InfoSec Framework Agent Trigger
+
+```
+[AUDIT AGENT: NEMESIS Deep Audit]
+```
+
+This invokes the full NEMESIS iterative loop within the InfoSec Framework workflow.
+
+---
+
+## Output Format
+
+Findings are saved to `.audit/findings/`:
+
+```
+.audit/findings/
+├── feynman-pass1.md          # Pass 1 Feynman findings
+├── state-pass2.md            # Pass 2 State Inconsistency findings
+├── feynman-pass3.md          # Pass 3 targeted Feynman (if needed)
+├── state-pass4.md            # Pass 4 targeted State (if needed)
+└── nemesis-verified.md       # Final consolidated + verified report
+```
+
+Each finding includes:
+
+```markdown
+### Finding NEM-001: [Title]
+**Severity:** CRITICAL | HIGH | MEDIUM | LOW
+**Discovery Path:** Feynman-only | State-only | Cross-feed Pass N → Pass M
+
+**Root Cause:** [What is broken and why]
+**Trigger Sequence:**
+1. [Step-by-step to reproduce]
+
+**Impact:** [What goes wrong — fund loss, locked state, etc.]
+**Fix:** [Minimal code change]
+**Verification:** Code trace | PoC test | Both
+```
+
+---
+
+## Attribution
+
+Built by [@sainikethan](https://github.com/sainikethan). [MIT License](https://github.com/sainikethan/nemesis-auditor/blob/main/LICENSE).
+
+
+================================================================
+FILE: Nemesis/skills/feynman-auditor/SKILL.md
+================================================================
+
+---
+name: feynman-auditor
+description: Deep business logic bug finder using the Feynman technique. Language-agnostic — works on Solidity, Move, Rust, Go, C++, or any codebase. Questions every line, every ordering choice, every guard presence/absence, and every implicit assumption to surface logic bugs that pattern-matching misses. Triggers on /feynman, feynman audit, or deep logic review.
+---
+
+# Feynman Auditor
+
+Business logic vulnerability hunter that finds bugs pattern-matching cannot. Uses the Feynman technique: if you cannot explain WHY a line exists, you do not understand the code — and where understanding breaks down, bugs hide.
+
+**Language-agnostic by design.** Logic bugs live in the reasoning, not the syntax. This agent works on any language — Solidity, Move, Rust, Go, C++, Python, TypeScript, or anything else. The questions are universal; only the examples change.
+
+This agent performs **reasoning-first analysis** — questioning the purpose, ordering, and consistency of every code decision to surface logic flaws, missing guards, and broken invariants. It complements pattern-matching tools by finding bugs that checklists and automated scanners miss.
+
+## When to Activate
+
+- User says "/feynman" or "feynman audit" or "deep logic review"
+- User wants business logic bug hunting beyond pattern-matching
+- After any automated scan to find what patterns missed
+
+## When NOT to Use
+
+- Quick pattern-matching scans where you only need known vulnerability patterns
+- Simple spec compliance checks
+- Report generation from existing findings
+
+---
+
+## Language Adaptation
+
+When you start, **detect the language** and adapt terminology:
+
+| Concept | Solidity | Move | Rust | Go | C++ |
+|---------|----------|------|------|----|-----|
+| Module/unit | contract | module | crate/mod | package | class/namespace |
+| Entry point | external/public fn | public fun | pub fn | Exported fn | public method |
+| Access guard | modifier | access control (friend, visibility) | trait bound / #[cfg] | middleware / auth check | access specifier |
+| Caller identity | msg.sender | &signer | caller param / Context | ctx / request.User | this / session |
+| Error/abort | revert / require | abort / assert! | panic! / Result::Err | error / panic | throw / exception |
+| State storage | storage variables | global storage / resources | struct fields / state | struct fields / DB | member variables |
+| Checked math | SafeMath / checked | built-in overflow abort | checked_add / saturating | math/big / overflow check | safe int libs |
+| Test framework | Foundry / Hardhat | Move Prover / aptos move test | cargo test | go test | gtest / catch2 |
+| Value/assets | ETH, ERC-20, NFTs | APT, Coin\<T\>, tokens | SOL, SPL tokens, funds | any value type | any value type |
+
+**IMPORTANT:** Do NOT force Solidity terminology onto non-Solidity code. Use the language's native concepts. The questions stay the same — the vocabulary adapts.
+
+---
+
+## Core Philosophy
+
+```
+"What I cannot create, I do not understand." — Feynman
+
+Applied to auditing: If you cannot explain WHY a line of code exists,
+in what order it MUST execute, and what BREAKS if it changes —
+you have found where bugs hide.
+```
+
+Pattern matchers find KNOWN bug classes. This agent finds UNKNOWN bugs by
+questioning the developer's reasoning at every decision point.
+
+---
+
+## Core Rules
+
+```
+RULE 0: QUESTION EVERYTHING, ASSUME NOTHING
+Never accept code at face value. Every line exists because a developer
+made a decision. Your job is to question that decision.
+
+RULE 1: EVIDENCE-BASED FINDINGS ONLY
+Every finding must include:
+- The specific line(s) of code
+- The question that exposed the issue
+- A concrete scenario proving the bug
+- Why the current code fails in that scenario
+
+RULE 2: COMPLETE COVERAGE
+Analyze EVERY function in scope. Do not skip "simple" functions.
+Business logic bugs hide in the code everyone assumes is correct.
+
+RULE 3: NO PATTERN MATCHING
+Do NOT fall back to pattern-matching ("this looks like reentrancy").
+Reason from first principles about what this specific code does.
+
+RULE 4: CROSS-FUNCTION REASONING
+A line that is correct in isolation may be wrong in context.
+Always consider how functions interact, call each other, and
+share state.
+```
+
+---
+
+## The Feynman Question Framework
+
+For **every function**, apply these question categories systematically:
+
+### Category 1: Purpose Questions (WHY is this here?)
+
+For each line or block of code, ask:
+
+```
+Q1.1: Why does this line exist? What invariant does it protect?
+      → If you cannot name the invariant, the line may be:
+        (a) unnecessary, or (b) protecting something the dev forgot to document
+
+Q1.2: What happens if I DELETE this line entirely?
+      → If nothing breaks, it's dead code
+      → If something breaks, you've found what it protects
+      → If something SHOULD break but doesn't, you've found a missing dependency
+
+Q1.3: What SPECIFIC attack or edge case motivated this check?
+      → If the dev added a guard like `assert(amount > 0)`, what goes
+        wrong at amount=0? Trace the zero/empty/max value through
+        the entire function.
+      → Language examples:
+        Solidity: require(amount > 0)
+        Move: assert!(amount > 0, ERROR_ZERO)
+        Rust: ensure!(amount > 0, Error::Zero)
+        Go: if amount <= 0 { return ErrZero }
+
+Q1.4: Is this check SUFFICIENT for what it's trying to prevent?
+      → A check for `amount > 0` doesn't prevent dust/minimum-value griefing
+      → A check for `caller == owner` doesn't prevent owner key compromise
+      → A bounds check doesn't prevent off-by-one within the bounds
+```
+
+### Category 2: Ordering Questions (WHAT IF I MOVE THIS?)
+
+For each state-changing operation, ask:
+
+```
+Q2.1: What if this line executes BEFORE the line above it?
+      → Would a different ordering allow state manipulation?
+      → Classic pattern: validate-then-act violations — reading state,
+        making an external call, THEN updating state, allows the
+        external call to re-enter with stale state.
+
+Q2.2: What if this line executes AFTER the line below it?
+      → Does delaying this operation create a window of inconsistent state?
+      → Can an external call / callback / interrupt between these lines
+        exploit the gap?
+
+Q2.3: What is the FIRST line that changes state? What is the LAST line
+      that reads state? Is there a gap between them?
+      → State reads after state writes may see stale data
+      → State writes before validation may leave dirty state on abort
+
+Q2.4: If this function ABORTS HALFWAY through, what state is left behind?
+      → Are there side effects that persist despite the abort?
+        (external calls, emitted events/logs, writes to other modules,
+         file I/O, network messages already sent)
+      → Can an attacker intentionally trigger partial execution?
+
+Q2.5: Can the ORDER in which users call this function matter?
+      → Front-running / race conditions: does calling first give advantage?
+      → Does the function behave differently based on prior state from
+        another user's call?
+      → In concurrent systems: what if two threads/goroutines/tasks
+        call this simultaneously?
+```
+
+### Category 3: Consistency Questions (WHY does A have it but B doesn't?)
+
+Compare functions that SHOULD be symmetric:
+
+```
+Q3.1: If functionA has an access guard and functionB doesn't, WHY?
+      → Is functionB intentionally unrestricted, or did the dev forget?
+      → List ALL functions that modify the same state
+      → Every function touching the same storage should have
+        consistent access control unless there's an explicit reason
+      → Language examples:
+        Solidity: modifier onlyOwner
+        Move: assert!(signer::address_of(account) == @admin)
+        Rust: #[access_control(ctx.accounts.authority)]
+        Go: if !isAuthorized(ctx) { return ErrUnauthorized }
+
+Q3.2: If deposit() checks X, does withdraw() also check X?
+      → Pair analysis: deposit/withdraw, stake/unstake, lock/unlock,
+        mint/burn, open/close, borrow/repay, add/remove,
+        register/deregister, create/destroy, push/pop, encode/decode
+      → The inverse operation must validate at least as strictly
+
+Q3.3: If functionA validates parameter P, does functionB (which also
+      takes P) validate it?
+      → Same parameter, different validation = one of them is wrong
+
+Q3.4: If functionA emits an event/log, does functionB (doing similar work)
+      also emit one?
+      → Missing events/logs = off-chain systems can't track state changes
+      → May break front-end, indexers, monitoring, or audit trails
+
+Q3.5: If functionA uses overflow-safe arithmetic, does functionB?
+      → Inconsistent overflow protection = the unprotected one may overflow
+      → Language examples:
+        Solidity: SafeMath vs raw operators (pre-0.8)
+        Rust: checked_add vs wrapping_add vs raw +
+        Move: built-in abort on overflow (but not underflow in all cases)
+        Go: no built-in overflow protection — must check manually
+        C++: signed overflow is UB, unsigned wraps silently
+```
+
+### Category 4: Assumption Questions (WHAT IS IMPLICITLY TRUSTED?)
+
+Expose hidden assumptions:
+
+```
+Q4.1: What does this function assume about THE CALLER?
+      → Who can call this? Is that enforced or just assumed?
+      → Could the caller be a different type than expected?
+        Solidity: EOA vs contract vs proxy vs address(0)
+        Move: &signer could be any account, not just human wallets
+        Rust/Anchor: could the signer account be a PDA?
+        Go: could the HTTP caller be unauthenticated / spoofed?
+        C++: could this be called from a different thread?
+      → What if the caller IS the system itself? (self-calls, recursion)
+
+Q4.2: What does this function assume about EXTERNAL DATA it receives?
+      → For tokens/coins: standard behavior? Could it be fee-on-transfer,
+        rebasing, have unusual decimals, or return false silently?
+      → For API responses: always well-formed? What if malformed, empty,
+        or adversarially crafted?
+      → For user input: sanitized? What about injection, encoding tricks,
+        or type confusion?
+      → For deserialized data: trusted format? What if the schema changed
+        or the data was tampered with?
+
+Q4.3: What does this function assume about the current state?
+      → "This will never be called when paused/locked" — but IS it enforced?
+      → "Balance will always be sufficient" — but who guarantees that?
+      → "This map/vector will never be empty" — but what if it is?
+      → "This was already initialized" — but what if it wasn't?
+
+Q4.4: What does this function assume about TIME or ORDERING?
+      → Blockchain: block timestamp can be manipulated (~15s on Ethereum,
+        varies by chain). Move: epoch-based timing. Solana: slot-based.
+      → General: system clock can be wrong, timezone issues, leap seconds
+      → What if deadline has already passed? What if time = 0?
+      → What if events arrive out of order? (network, async, concurrent)
+
+Q4.5: What does this function assume about PRICES, RATES, or EXTERNAL VALUES?
+      → Can the value be manipulated within the same transaction/call?
+      → Is the data source fresh? What if the oracle/API is stale or dead?
+      → What if the value is 0? What if it's MAX_VALUE for the type?
+      → What if precision differs between source and consumer?
+
+Q4.6: What does this function assume about INPUT AMOUNTS or SIZES?
+      → What if amount/size = 0? What if it's the maximum representable value?
+      → What if amount = 1 (dust / minimum unit)?
+      → What if amount exceeds what's available?
+      → What if a collection is empty? What if it has millions of entries?
+```
+
+### Category 5: Boundary & Edge Case Questions (WHAT BREAKS AT THE EDGES?)
+
+```
+Q5.1: What happens on the FIRST call to this function? (Empty state)
+      → First depositor, first user, first initialization
+      → Division by zero when total = 0?
+      → Share/ratio inflation when pool/collection is empty?
+      → Uninitialized state treated as valid?
+
+Q5.2: What happens on the LAST call? (Draining/exhaustion)
+      → Last withdraw that empties everything
+      → What if remaining dust can never be extracted?
+      → Does rounding trap value permanently?
+      → What if the last element removal breaks an invariant?
+
+Q5.3: What if this function is called TWICE in rapid succession?
+      → Re-initialization, double-spending, double-counting
+      → Does the second call see state from the first?
+      → In concurrent systems: race condition between the two calls?
+      → Blockchain: two calls in the same block/transaction
+
+Q5.4: What if two DIFFERENT functions are called in the same context?
+      → Borrow in funcA, manipulate in funcB, repay in funcA
+      → Does cross-function interaction break invariants?
+      → What about callback patterns where control flow is non-linear?
+
+Q5.5: What if this function is called with THE SYSTEM ITSELF as a parameter?
+      → Self-referential calls: transfer to self, compare with self
+      → Can the system be both sender and receiver, both source and dest?
+      → What about circular references or recursive structures?
+```
+
+### Category 6: Return Value & Error Path Questions
+
+```
+Q6.1: What does this function return? Who consumes the return value?
+      → If the caller ignores the return value, what's lost?
+      → If the return value is wrong, what downstream logic breaks?
+      → Language-specific: Does the language even FORCE you to check?
+        Rust: Result must be used. Go: error can be silently ignored with _.
+        Solidity: low-level call returns bool that's often unchecked.
+        C++: [[nodiscard]] is opt-in. Move: values must be consumed.
+
+Q6.2: What happens on the ERROR/ABORT path?
+      → Are there side effects before the error?
+      → Does the error message leak sensitive information?
+      → Can an attacker cause targeted errors (griefing / DoS)?
+      → In languages with exceptions: is cleanup code (finally/defer/
+        Drop) correct? Are resources leaked on the error path?
+
+Q6.3: What if an EXTERNAL CALL in this function fails silently?
+      → Does the language/runtime guarantee failure propagation?
+      → Is the error checked, or can it be swallowed?
+      → Language examples:
+        Solidity: low-level call returns (bool, bytes) — often unchecked
+        Go: err is a normal return value — easy to ignore with _
+        Rust: .unwrap() can panic; ? propagates but hides the error
+        C++: exception might be caught too broadly
+        Move: abort is always propagated (safer by design)
+
+Q6.4: Is there a code path where NO return and NO error happens?
+      → Functions falling through without explicit return
+      → Default/zero values used when they shouldn't be
+      → Missing match/switch arms or else branches
+      → Language-specific:
+        Rust: compiler catches this. Go/C++: does not always.
+        Solidity: functions can fall through returning zero values.
+```
+
+### Category 7: External Call Reordering & Multi-Transaction State Analysis
+
+This category catches bugs that live in the TIMING and SEQUENCING of operations — both within a single transaction and across multiple transactions over time.
+
+#### Part A: External Call Reordering (within a single transaction)
+
+```
+Q7.1: If the function performs an external call BEFORE a state update,
+      what happens if I SWAP them — state update first, external call second?
+      → If the swap causes a revert: the ORIGINAL ordering may be exploitable
+        (the external call might re-enter or manipulate state before it's updated)
+      → If the swap works cleanly: the original ordering is likely safe,
+        OR the swap reveals the intended safe ordering was never enforced
+      → KEY: Try both directions. The one that reverts tells you which
+        ordering the code DEPENDS on. The one that doesn't revert tells you
+        which ordering an attacker can exploit.
+
+Q7.2: If the function performs an external call AFTER a state update,
+      what happens if I SWAP them — external call first, state update second?
+      → If the swap causes a revert: the current code is CORRECTLY ordered
+        (state must be updated before the external call can proceed)
+      → If the swap works cleanly: the ordering doesn't matter, OR
+        the external call could be exploited before state is finalized
+      → FINDING: If moving the external call BEFORE the state update
+        allows an attacker to observe/act on stale state, this is a bug.
+
+Q7.3: For EVERY external call in the function, ask:
+      "What can the CALLEE do with the current state at THIS exact moment?"
+      → At the point of the external call, what state is committed vs pending?
+      → Can the callee re-enter this contract/module and see inconsistent state?
+      → Can the callee call a DIFFERENT function that reads the not-yet-updated state?
+      → This applies beyond reentrancy: callbacks, hooks, oracle calls,
+        cross-contract reads — ANY outbound call is an opportunity for
+        the callee to act on intermediate state.
+      → Language examples:
+        Solidity: .call(), .transfer(), IERC20.safeTransfer(), callback hooks
+        Move: cross-module function calls during resource manipulation
+        Rust/Anchor: CPI (Cross-Program Invocation) in Solana
+        Go: outbound HTTP/RPC calls, goroutine spawning mid-operation
+        C++: virtual method calls, callback invocations, signal handlers
+
+Q7.4: What is the MINIMAL set of state that MUST be updated before each
+      external call to prevent exploitation?
+      → List every state variable the external callee could read or depend on
+      → If ANY of those variables are updated AFTER the external call,
+        flag it as a potential ordering vulnerability
+      → The fix is often: move the state update above the external call
+        (checks-effects-interactions pattern generalized to any language)
+```
+
+#### Part B: Multi-Transaction State Corruption (across time)
+
+```
+Q7.5: If a user calls this function with value X, and then calls it AGAIN
+      later with value Y — does the second call behave correctly given the
+      state changes from the first call?
+      → The first call changes state. Does the second call's logic ACCOUNT
+        for that changed state, or does it assume fresh/initial state?
+      → Example: deposit(100), then deposit(50). Does the second deposit
+        correctly handle shares/accounting when totalSupply is no longer 0?
+      → Example: borrow(1000), then borrow(500). Does the second borrow
+        check against the UPDATED debt, or does it re-read stale collateral?
+
+Q7.6: After transaction T1 changes state, does transaction T2 (same function,
+      different parameters) REVERT when it shouldn't, or SUCCEED when it shouldn't?
+      → Unexpected revert: T1's state change made a condition impossible for T2
+        (e.g., T1 drains a pool below a minimum, T2 can't withdraw dust)
+      → Unexpected success: T1's state change should have blocked T2 but didn't
+        (e.g., T1 uses all collateral, T2 still borrows against phantom collateral)
+      → DEEP CHECK: Don't just test T2 immediately after T1. Test T2 after:
+        - Many T1s have accumulated (state drift over time)
+        - T1 with extreme values (max, min, dust)
+        - T1 from a different user (cross-user state pollution)
+        - T1 that was partially reverted (try-catch leaving dirty state)
+
+Q7.7: Does the accumulated state from MULTIPLE calls create a condition that
+      a SINGLE call can never reach?
+      → Rounding errors that compound: each call loses 1 wei of precision,
+        after 1000 calls the accounting is off by 1000 wei
+      → Monotonically growing state: counters, nonces, array lengths that
+        grow but never shrink — do they hit a ceiling or overflow?
+      → Reward/rate staleness: if updateReward() is called infrequently,
+        do accumulated rewards become incorrect?
+      → State fragmentation: many small operations leaving dust/remnants
+        that block future operations (e.g., can't close position because
+        of 1 wei of remaining debt)
+
+      WORKED EXAMPLE — Partial Swap Fee Distribution Bug:
+      ─────────────────────────────────────────────────────
+      Consider an AMM pool with a swap() function that:
+        1. Calculates amountOut based on reserves
+        2. Updates accumulatedFees (used for LP fee distribution)
+        3. Updates reserves
+
+      Scenario — partial swap with wrong fee accounting:
+        State: reserveA=10000, reserveB=10000, accFees=0, totalLP=100
+
+        TX1: Alice swaps 1000 tokenA → tokenB (partial fill, 0.3% fee)
+          - fee = 3 tokenA → accFees updated to 3
+          - BUT: the fee is added to accFees BEFORE reserves update
+          - reserveA becomes 11000, reserveB becomes ~9091
+          - feePerLP = 3/100 = 0.03 per LP token ✓ (looks correct)
+
+        TX2: Bob swaps 500 tokenA → tokenB (different amount, same function)
+          - fee = 1.5 tokenA → accFees updated to 4.5
+          - BUT: feePerLP is now calculated as 4.5/100 = 0.045
+          - The problem: the fee rate was computed using STALE reserve
+            ratios from before TX1 changed the pool composition
+          - After TX1, the pool is imbalanced — 1 tokenA is worth less
+            than before. But the fee accounting still values TX2's fee
+            at the OLD rate.
+
+        TX3: Charlie claims LP fees
+          - Gets paid based on accFees = 4.5 at OLD token valuation
+          - But the pool's ACTUAL composition has shifted — the fees
+            are denominated in a token that's now worth less in the pool
+          - Result: fee distribution is skewed. Early LPs get overpaid,
+            late LPs get underpaid. Over hundreds of swaps, the
+            accounting diverges significantly from reality.
+
+        The root cause: accFees is updated per-swap without rebasing
+        against the current reserve ratio. Each swap changes what "1 unit
+        of fee" is worth, but the accumulator treats all units as equal.
+
+      → GENERALIZE THIS PATTERN to any system where:
+        - A global accumulator (fees, rewards, interest) is updated per-tx
+        - The VALUE of what's being accumulated changes between txs
+        - The accumulator doesn't rebase/normalize against current state
+        - Examples: LP fee distributors, staking reward accumulators,
+          interest rate models, rebasing token accounting, yield vaults
+          with variable share prices
+
+      → CHECK SPECIFICALLY:
+        - Is the fee/reward denominated in a token whose relative value
+          changes with each operation?
+        - Does the accumulator use a snapshot of rates/prices that goes
+          stale after the state-changing operation?
+        - Are fees calculated BEFORE or AFTER the reserves/balances update?
+          (before = stale rate, after = correct rate, but BOTH must be checked)
+        - When multiple fee tiers or partial fills exist, does each partial
+          chunk use the UPDATED state from the previous chunk, or do they
+          all use the ORIGINAL state? (batch vs iterative accounting)
+        - After N swaps with varying sizes, does SUM(individual fees) equal
+          the fee you'd compute on the AGGREGATE swap? If not, the
+          accumulator is path-dependent and exploitable.
+
+Q7.8: Can an attacker craft a SEQUENCE of transactions to reach a state
+      that no single "normal" transaction path would produce?
+      → Deposit-borrow-withdraw-liquidate sequences that leave bad debt
+      → Stake-unstake-restake sequences that compound rounding errors
+      → Create-transfer-destroy sequences that orphan child state
+      → The attacker's advantage: they CHOOSE the order, amounts, and
+        timing. Test adversarial sequences, not just happy-path sequences.
+      → For each function, ask: "After calling THIS, what state is the
+        system in? What functions become newly available or newly dangerous
+        to call from that state?"
+```
+
+---
+
+## Execution Process
+
+### Phase 0: Attacker Mindset (BEFORE reading a single line of code)
+
+```
+The bugs are in the answers to these 4 questions.
+Ask them FIRST — they tell you WHERE to spend your time.
+
+Q0.1: What's the WORST thing an attacker can do here?
+      → Think attacker, NOT user. Users follow happy paths.
+        Attackers find the one path the dev never imagined.
+      → List the top 3-5 catastrophic outcomes:
+        drain all funds, brick the system, steal admin privileges,
+        manipulate prices/data, grief other users permanently,
+        corrupt state irreversibly, exfiltrate sensitive data.
+      → These become your ATTACK GOALS for the entire audit.
+        Every function you read, ask: "Does this help an
+        attacker achieve any of these goals?"
+
+Q0.2: What parts of the project are NOVEL?
+      → First-time code = first-time bugs. Period.
+      → Identify code that is NOT a fork/copy of battle-tested
+        libraries or frameworks.
+        Solidity: OpenZeppelin, Uniswap, Aave forks
+        Move: Aptos Framework, Sui Framework stdlib
+        Rust: well-known crates (tokio, serde, anchor)
+        Go: standard library, well-maintained packages
+        C++: STL, Boost, established frameworks
+      → Custom math, custom state machines, novel incentive
+        structures, unusual callback/hook patterns —
+        THIS is where your time pays off most.
+      → Standard library imports are unlikely to have bugs.
+        The glue code connecting them is where things break.
+
+Q0.3: Where does VALUE actually sit?
+      → Follow the money. Every expensive mistake involves
+        value moving somewhere it shouldn't.
+      → Map every module/component that holds:
+        - Funds (native tokens, coins, balances, account credits)
+        - Assets (tokens, NFTs, resources, inventory)
+        - Sensitive data (keys, credentials, PII)
+        - Accounting state (shares, debt, rewards, balances)
+      → For each value store, ask: "What code path moves
+        value OUT? What authorizes it? What validates the amount?"
+      → The functions touching these stores get 10x more scrutiny.
+
+Q0.4: What's the most COMPLEX interaction path?
+      → Complexity kills. The most complex path through the
+        system is the most likely to contain bugs.
+      → Map paths that: cross multiple modules/contracts/services,
+        involve callbacks or hooks, mix user input with external data,
+        have multiple branching conditions, or chain state changes.
+      → If a path touches 4+ modules or has 3+ external calls,
+        it's a prime candidate for state inconsistency bugs.
+      → Cross-module interaction + value movement = audit gold.
+```
+
+**Output of Phase 0:** A prioritized hit list.
+
+```
+┌─────────────────────────────────────────────────────┐
+│ PHASE 0 — ATTACKER'S HIT LIST                       │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│ LANGUAGE: [detected language/framework]               │
+│                                                      │
+│ ATTACK GOALS (from Q0.1):                            │
+│   1. [worst outcome]                                 │
+│   2. [second worst]                                  │
+│   3. [third worst]                                   │
+│                                                      │
+│ NOVEL CODE — highest bug density (from Q0.2):        │
+│   - [module/file] — [why it's novel]                 │
+│   - [module/file] — [why it's novel]                 │
+│                                                      │
+│ VALUE STORES — follow the money (from Q0.3):         │
+│   - [module] holds [asset] — [outflow functions]     │
+│   - [module] holds [asset] — [outflow functions]     │
+│                                                      │
+│ COMPLEX PATHS — complexity kills (from Q0.4):        │
+│   - [path description] — [modules involved]          │
+│   - [path description] — [modules involved]          │
+│                                                      │
+│ PRIORITY ORDER (spend time here first):              │
+│   1. [highest priority target + why]                 │
+│   2. [second priority target + why]                  │
+│   3. [third priority target + why]                   │
+│                                                      │
+└─────────────────────────────────────────────────────┘
+```
+
+Functions and modules that appear in MULTIPLE answers above get audited FIRST
+and with the DEEPEST scrutiny in Phase 2. Everything else is secondary.
+
+---
+
+### Phase 1: Scope & Inventory
+
+```
+1. Identify ALL modules/contracts/packages in scope
+2. For each module, list:
+   - ALL entry points (public/exported/external functions — the attack surface)
+   - ALL state they read/write (storage, globals, struct fields, DB)
+   - ALL access guards applied (modifiers, auth checks, visibility)
+   - ALL internal functions they call
+3. Build a FUNCTION-STATE MATRIX:
+   | Function | Reads | Writes | Guards | Calls |
+   |----------|-------|--------|--------|-------|
+   This matrix is your map for consistency analysis (Category 3)
+```
+
+### Phase 2: Individual Function Deep Dive
+
+For EACH function, perform the Feynman interrogation:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ FUNCTION: [module.functionName]                      │
+│ Visibility: [public/private/internal/exported]       │
+│ Guards: [access control, auth checks, decorators]    │
+│ State reads: [variables/fields/storage]              │
+│ State writes: [variables/fields/storage]             │
+│ External calls: [targets]                            │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│ LINE-BY-LINE INTERROGATION:                          │
+│                                                      │
+│ L[N]: [code line]                                    │
+│   Q1.1 → WHY: [explanation or "CANNOT EXPLAIN" flag] │
+│   Q2.1 → ORDER: [what if moved up?]                  │
+│   Q2.2 → ORDER: [what if moved down?]                │
+│   Q4.x → ASSUMES: [hidden assumption found]          │
+│   Q5.x → EDGE: [boundary behavior]                   │
+│   → VERDICT: SOUND | SUSPECT | VULNERABLE            │
+│   → If SUSPECT/VULNERABLE: [specific scenario]       │
+│                                                      │
+│ CROSS-FUNCTION CHECK:                                │
+│   Q3.1 → [guard consistency with sibling functions]   │
+│   Q3.2 → [inverse operation parity]                  │
+│   Q3.3 → [parameter validation consistency]          │
+│                                                      │
+│ FUNCTION VERDICT: SOUND | HAS_CONCERNS | VULNERABLE  │
+└─────────────────────────────────────────────────────┘
+```
+
+**IMPORTANT**: You do NOT need to ask ALL questions for ALL lines. Use judgment:
+- State-changing lines → heavy on Q2 (ordering) and Q4 (assumptions)
+- Validation/guard lines → heavy on Q1 (purpose) and Q3 (consistency)
+- External calls / cross-module calls → heavy on Q4 (assumptions), Q5 (edges), Q6 (returns)
+- Math operations → heavy on Q5 (boundaries) and Q4.6 (amount assumptions)
+
+### Phase 3: Cross-Function Analysis
+
+```
+Using the Function-State Matrix from Phase 1:
+
+1. GUARD CONSISTENCY
+   - Group functions by the state variables they WRITE
+   - Within each group, list all access guards
+   - FLAG: Any function missing a guard its siblings have
+
+2. INVERSE OPERATION PARITY
+   - Pair up: deposit/withdraw, mint/burn, stake/unstake,
+     create/destroy, add/remove, open/close, encode/decode, etc.
+   - For each pair, compare:
+     - Parameter validation (Q3.2)
+     - State changes (are they truly inverse?)
+     - Access control (should both require same auth?)
+     - Event/log emission (are both tracked?)
+
+3. STATE TRANSITION INTEGRITY
+   - Map all valid state transitions
+   - For each transition, verify:
+     - Can it be triggered out of expected order?
+     - Can it be skipped entirely?
+     - Can it be triggered by an unauthorized actor?
+     - What if it's triggered when the system is in an unexpected state?
+
+4. VALUE FLOW TRACKING
+   - Trace value/asset flows across function boundaries
+   - Verify: value in == value out (conservation)
+   - FLAG: Any path where value can be created or destroyed unexpectedly
+```
+
+### Phase 4: Synthesize Raw Findings
+
+```
+For each SUSPECT or VULNERABLE verdict:
+
+1. Write the QUESTION that exposed it
+2. Describe the SCENARIO (step-by-step)
+3. Show the AFFECTED CODE (exact lines)
+4. Explain WHY the current code fails
+5. Assess IMPACT (what can an attacker gain/break?)
+6. Classify severity: CRITICAL / HIGH / MEDIUM / LOW
+7. Suggest a FIX (minimal, targeted)
+```
+
+Save raw (unverified) findings to: `.audit/findings/feynman-analysis-raw.md`
+
+**IMPORTANT: Do NOT report raw findings to the user as final results.**
+These are HYPOTHESES that must be verified in Phase 5 before inclusion in the final report.
+
+---
+
+### Phase 5: Verification Gate (MANDATORY before final report)
+
+**Every CRITICAL, HIGH, and MEDIUM finding from Phase 4 MUST be verified before
+being included in the final report.** Feynman reasoning surfaces many hypotheses,
+but code-level reasoning alone produces false positives (wrong mechanism assumed,
+mitigating code missed, incorrect severity assessment). Verification eliminates
+these before they reach the user.
+
+```
+VERIFICATION RULE: No C/H/M finding goes into the final report unverified.
+Raw findings are HYPOTHESES. Verified findings are RESULTS.
+```
+
+#### Verification Methods (use whichever is most appropriate per finding):
+
+**Method A: Deep Code Trace Verification**
+For findings about missing checks, wrong parameters, or inconsistent validation:
+1. Read the EXACT lines cited in the finding
+2. Trace the complete call chain (caller → callee → downstream effects)
+3. Check for mitigating code elsewhere (guards in called functions, validation in callers)
+4. Confirm the scenario is reachable end-to-end
+5. Verdict: TRUE POSITIVE / FALSE POSITIVE / DOWNGRADE
+
+**Method B: PoC Test Verification**
+For findings about math errors, rounding drift, resource limits, or state accounting:
+1. Write a test using the project's native test framework:
+   - Solidity: Foundry test → `forge test --match-path "test/audit/[file]" -vvv`
+   - Move: `aptos move test --filter [test_name]` or `sui move test`
+   - Rust: `cargo test [test_name] -- --nocapture`
+   - Go: `go test -run TestName -v`
+   - C++: gtest/catch2 equivalent
+2. The PoC must demonstrate the EXACT scenario described in the finding
+3. If the test passes and output confirms the issue: TRUE POSITIVE
+4. If the test fails or output disproves the claim: FALSE POSITIVE or DOWNGRADE
+
+**Method C: Hybrid (Code Trace + PoC)**
+For complex findings spanning multiple modules:
+1. First do a code trace to confirm the mechanism is plausible
+2. Then write a PoC to confirm with concrete values and runtime behavior
+
+#### What to verify for each severity:
+
+| Severity | Verification Required | Method |
+|----------|----------------------|--------|
+| CRITICAL | MANDATORY — PoC required (Method B or C) | Must demonstrate value loss or permanent DoS with concrete numbers |
+| HIGH | MANDATORY — Code trace + PoC recommended (Method A or C) | Must confirm the broken invariant is reachable |
+| MEDIUM | MANDATORY — Code trace minimum (Method A) | Must confirm the mechanism is correct and not mitigated elsewhere |
+| LOW | Optional — Code inspection sufficient | Quick sanity check: is the line/function real? |
+
+#### Verification Checklist (per finding):
+
+```
+[] 1. Does the cited code actually exist at the stated line numbers?
+[] 2. Is the described mechanism correct? (trace the actual math/logic)
+[] 3. Are there mitigating factors the finding missed?
+     - Called functions that add validation
+     - Access guards on calling functions
+     - Upstream checks that prevent the scenario
+     - Downstream checks that catch the error
+     - Language-level safety (borrow checker, type system, Move verifier)
+[] 4. Is the severity accurate given the ACTUAL impact?
+     - Does "value loss" actually mean "revert/abort with confusing error"?
+     - Does "permanent DoS" actually mean "self-griefing only"?
+     - Is the "missing check" actually handled by a different code path?
+[] 5. For PoC-verified findings: does the test output match the claim?
+```
+
+#### Common False Positive Patterns from Feynman Analysis:
+
+These patterns frequently produce hypotheses that fail verification:
+
+1. **"Missing authorization" that exists in a different layer:**
+   Finding says auth is missing, but the caller/router/middleware already
+   enforces it before this function is reachable.
+
+2. **"Rounding drift" that's cleaned by downstream code:**
+   Finding identifies `scale_up(scale_down(x)) < x` but misses cleanup
+   applied upstream that ensures x is always a clean multiple.
+
+3. **"No validation" that errors downstream:**
+   Finding says a parameter isn't validated, but the called function has its own
+   validation that catches invalid inputs (just with a confusing error message).
+
+4. **"Unbounded loop" bounded by design or economics:**
+   Finding says a loop has no cap, but the data structure is bounded by design,
+   or the economic cost of creating the DoS condition exceeds the benefit.
+
+5. **"Severity inflation":**
+   Finding claims CRITICAL (value loss) but actual impact is MEDIUM (error/DoS)
+   because a safety check catches the issue before value is affected.
+
+6. **"Language safety ignored":**
+   Finding claims overflow/underflow but the language aborts on overflow by
+   default (Move, Rust in debug, Solidity >=0.8). Or finding claims memory
+   unsafety in a memory-safe language.
+
+#### Phase 5 Output:
+
+After verification, produce the VERIFIED findings file:
+
+Save to: `.audit/findings/feynman-verified.md`
+
+```markdown
+# Feynman Audit — Verified Findings
+
+## Verification Summary
+| ID | Original Severity | Verdict | Final Severity |
+|----|-------------------|---------|----------------|
+| FF-001 | CRITICAL | TRUE POSITIVE — DOWNGRADE | LOW |
+| FF-002 | HIGH | TRUE POSITIVE | HIGH |
+| FF-003 | MEDIUM | FALSE POSITIVE | — |
+| ... | ... | ... | ... |
+
+## Verified TRUE POSITIVE Findings
+[Only findings that passed verification, with final severity]
+
+## False Positives Eliminated
+[Findings that failed verification, with explanation of why]
+
+## Downgraded Findings
+[Findings where severity was reduced, with justification]
+```
+
+**Only the verified findings file should be presented to the user as the final report.**
+
+---
+
+## Severity Classification
+
+| Severity | Criteria |
+|----------|----------|
+| **CRITICAL** | Direct value/fund loss, permanent DoS, or system insolvency |
+| **HIGH** | Conditional value loss, privilege escalation, or broken core invariant |
+| **MEDIUM** | Value leakage, griefing with cost, or degraded functionality |
+| **LOW** | Informational, inefficiency, or cosmetic inconsistency with no exploit |
+
+---
+
+## Output Format
+
+Two files are produced during the audit:
+
+### 1. Raw Findings (intermediate — NOT the final deliverable)
+
+Save to: `.audit/findings/feynman-analysis-raw.md`
+
+This contains ALL hypotheses from Phases 1-4 before verification. Include the
+Function-State Matrix, Guard Consistency Analysis, Inverse Operation Parity,
+and all raw findings with their initial severity classification.
+
+### 2. Verified Findings (FINAL deliverable — present this to the user)
+
+Save to: `.audit/findings/feynman-verified.md`
+
+```markdown
+# Feynman Audit — Verified Findings
+
+## Scope
+- Language: [detected language]
+- Modules analyzed: [list]
+- Functions analyzed: [count]
+- Lines interrogated: [count]
+
+## Verification Summary
+| ID | Original Severity | Verdict | Final Severity |
+|----|-------------------|---------|----------------|
+
+## Function-State Matrix
+[The matrix from Phase 1]
+
+## Guard Consistency Analysis
+[Results from Phase 3.1 — which functions are missing expected guards]
+
+## Inverse Operation Parity
+[Results from Phase 3.2 — asymmetries between paired operations]
+
+## Verified Findings (TRUE POSITIVES only)
+
+### Finding FF-001: [Title]
+**Severity:** CRITICAL | HIGH | MEDIUM | LOW
+**Module:** [name]
+**Function:** [name]
+**Lines:** [L:start-end]
+**Verification:** [Code trace / PoC / Hybrid] — [test file if PoC]
+
+**Feynman Question that exposed this:**
+> [The exact question from the framework]
+
+**The code:**
+```[language]
+// [affected code block]
+```
+
+**Why this is wrong:**
+[First-principles explanation — no jargon, no pattern names.
+Explain like you're teaching someone who has never seen this bug class.]
+
+**Verification evidence:**
+[For code trace: the exact mitigating/confirming code paths traced]
+[For PoC: test name, key log output, concrete numbers]
+
+**Attack scenario:**
+1. [Step-by-step exploitation]
+
+**Impact:**
+[What an attacker gains or what breaks]
+
+**Suggested fix:**
+```[language]
+// [minimal fix]
+```
+
+---
+
+## False Positives Eliminated
+[Findings that failed verification, with explanation of WHY they are false]
+
+## Downgraded Findings
+[Findings where severity was reduced, with justification]
+
+## LOW Findings (verified by inspection)
+[Table of LOW findings with brief verdict]
+
+## Summary
+- Total functions analyzed: [N]
+- Raw findings (pre-verification): [N] CRITICAL | [N] HIGH | [N] MEDIUM | [N] LOW
+- After verification: [N] TRUE POSITIVE | [N] FALSE POSITIVE | [N] DOWNGRADED
+- Final: [N] HIGH | [N] MEDIUM | [N] LOW
+```
+
+---
+
+## Post-Audit Actions
+
+| Scenario | Action |
+|----------|--------|
+| Need deeper context on a function | Re-read the function and its callers line-by-line |
+| Finding confirmed as true positive | Write up with severity, trigger sequence, PoC, and fix |
+| Need exploit validation | Write a Foundry/Hardhat PoC test to confirm |
+| Uncertain about design intent | Check NatSpec, comments, and project documentation |
+
+---
+
+## Anti-Hallucination Protocol
+
+```
+NEVER:
+- Invent code that doesn't exist in the codebase
+- Assume a function has an access guard without verifying
+- Claim a variable is uninitialized without checking constructors/initializers
+- Report a finding without showing the exact vulnerable code
+- Use phrases like "could potentially" or "might be vulnerable"
+- Apply language-specific assumptions to a different language
+  (e.g., don't assume Rust code has Solidity's reentrancy model)
+
+ALWAYS:
+- Read the actual code before questioning it
+- Verify your assumptions by reading called functions
+- Check constructors, initializers, and default values
+- Confirm guard/access-control behavior by reading the actual implementation
+- Show exact file paths and line numbers for all references
+- Use the correct language terminology (not Solidity terms for Rust code)
+```
+
+---
+
+## Quick-Start Checklist
+
+When starting a Feynman audit:
+
+- [ ] **Phase 0:** Detect the language and adapt terminology
+- [ ] **Phase 0:** Answer the 4 attacker mindset questions BEFORE reading code
+- [ ] **Phase 0:** Build the Attacker's Hit List (attack goals, novel code, value stores, complex paths)
+- [ ] **Phase 0:** Prioritize targets — functions appearing in multiple answers get audited first
+- [ ] **Phase 1:** List all modules/contracts/packages in scope
+- [ ] **Phase 1:** Build the Function-State Matrix
+- [ ] **Phase 1:** Identify all function pairs (deposit/withdraw, etc.)
+- [ ] **Phase 2:** Run Feynman interrogation on every entry point (priority order from Phase 0)
+- [ ] **Phase 3:** Run cross-function analysis (guard consistency, inverse parity, value flow)
+- [ ] **Phase 4:** Document all SUSPECT and VULNERABLE verdicts as raw findings
+- [ ] **Phase 4:** Save raw findings to `.audit/findings/feynman-analysis-raw.md`
+- [ ] **Phase 5:** Verify ALL C/H/M findings (code trace + PoC where needed)
+- [ ] **Phase 5:** Eliminate false positives, downgrade inflated severities
+- [ ] **Phase 5:** Save verified findings to `.audit/findings/feynman-verified.md`
+- [ ] **Phase 5:** Present ONLY the verified report to the user
+
+
+================================================================
+FILE: Nemesis/skills/nemesis-auditor/SKILL.md
+================================================================
+
+---
+name: nemesis-auditor
+description: "The Inescapable Auditor. Runs the full Feynman Auditor (Stage 1) and full State Inconsistency Auditor (Stage 2) as primary steps, then fuses their outputs in a feedback loop (Stage 3) to find bugs at the intersection that neither alone would catch. Language-agnostic. Triggers on /nemesis or nemesis audit."
+---
+
+# N E M E S I S
+### The Inescapable Auditor
+
+```
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                                                               ║
+    ║   "Nemesis — the goddess of divine retribution against        ║
+    ║    those who succumb to hubris."                              ║
+    ║                                                               ║
+    ║   Your code was written with confidence.                      ║
+    ║   Nemesis questions that confidence.                          ║
+    ║   Then maps what your confidence forgot to protect.           ║
+    ║   Then questions it again.                                    ║
+    ║                                                               ║
+    ║   Nothing survives both passes.                               ║
+    ║                                                               ║
+    ╚═══════════════════════════════════════════════════════════════╝
+```
+
+Not three sequential stages. An **iterative back-and-forth loop** where Feynman and State Inconsistency run alternating passes — each pass informed by the previous pass's findings — until no new bugs surface.
+
+**Pass 1 (Feynman)** — Run the **complete Feynman Auditor** (`Nemesis/skills/feynman-auditor/SKILL.md`). Every line questioned. Every ordering challenged. Every assumption exposed. Collect findings + suspects.
+
+**Pass 2 (State)** — Run the **complete State Inconsistency Auditor** (`Nemesis/skills/state-inconsistency-auditor/SKILL.md`), **enriched by Pass 1's findings**. Feynman suspects become extra audit targets. Feynman's exposed assumptions reveal new coupled pairs to map. Collect findings + gaps.
+
+**Pass 3 (Feynman)** — Re-run Feynman **only on functions/state touched by Pass 2's new findings**. State gaps become new Feynman interrogation targets. Ask: "WHY is this sync missing? What assumption led to the gap? What breaks downstream?" Collect new findings.
+
+**Pass 4 (State)** — Re-run State Mapper **only on new coupled pairs and mutation paths exposed by Pass 3**. Check if Feynman's new findings reveal additional state desync. Collect new findings.
+
+**...continue alternating until convergence (no new findings in a pass).**
+
+**Language-agnostic.** Works on Solidity, Move, Rust, Go, C++, or anything else.
+
+---
+
+## When to Activate
+
+- User says `/nemesis` or `nemesis audit` or `deep combined audit`
+- User wants maximum-depth business logic + state inconsistency coverage
+- When the codebase is complex enough that either auditor alone would miss cross-cutting bugs
+
+## When NOT to Use
+
+- Quick pattern-matching scans where you only need known vulnerability patterns
+- Simple spec compliance checks
+- Report generation from existing findings
+
+---
+
+## The Nemesis Execution Model: Iterative Back-and-Forth
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│              N E M E S I S   —   I T E R A T I V E   L O O P        │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  PHASE 0: RECON                                                       │
+│  ───────────────                                                      │
+│  Attacker mindset (Q0.1-Q0.5) + Initial coupling hypothesis          │
+│  Output: Hit List + Priority Targets                                  │
+│                                                                       │
+│  ════════════════════════════════════════════════════════════════      │
+│  ║              ITERATIVE PASS LOOP BEGINS                     ║      │
+│  ════════════════════════════════════════════════════════════════      │
+│                                                                       │
+│  ┌────────────────────────────────────────────────────────────┐      │
+│  │ PASS 1 — FEYNMAN (full skill, first run)                   │      │
+│  │                                                             │      │
+│  │ Load: Nemesis/skills/feynman-auditor/SKILL.md              │      │
+│  │ Execute complete pipeline: Phase 0→1→2→3→4→5               │      │
+│  │ Input: Raw codebase + Phase 0 hit list                      │      │
+│  │ Output:                                                     │      │
+│  │   • Verified findings (.audit/findings/feynman-pass1.md)    │      │
+│  │   • SUSPECT verdicts (functions + state vars flagged)       │      │
+│  │   • Exposed assumptions (implicit trusts about state)       │      │
+│  │   • Ordering concerns (external call timing issues)         │      │
+│  │   • Multi-tx state corruption candidates                    │      │
+│  │   • Function-State Matrix                                   │      │
+│  └────────────────────────────────────────────────────────────┘      │
+│                           ↓ feed forward                              │
+│  ┌────────────────────────────────────────────────────────────┐      │
+│  │ PASS 2 — STATE INCONSISTENCY (full skill, enriched)        │      │
+│  │                                                             │      │
+│  │ Load: Nemesis/skills/state-inconsistency-auditor/SKILL.md  │      │
+│  │ Execute complete pipeline: Phase 1→2→3→4→5→6→7→8           │      │
+│  │ Input: Raw codebase + ALL of Pass 1's output                │      │
+│  │                                                             │      │
+│  │ ENRICHMENT from Pass 1:                                     │      │
+│  │   • Feynman SUSPECTS → add as extra state audit targets     │      │
+│  │   • Exposed assumptions → reveal NEW coupled pairs          │      │
+│  │     ("dev assumes X stays in sync" → map X as coupled)      │      │
+│  │   • Ordering concerns → check if state gap exists at        │      │
+│  │     the flagged ordering point                              │      │
+│  │   • Function-State Matrix → use as base for Mutation Matrix │      │
+│  │                                                             │      │
+│  │ Output:                                                     │      │
+│  │   • Verified findings (.audit/findings/state-pass2.md)      │      │
+│  │   • State GAPS (functions missing coupled updates)          │      │
+│  │   • New coupled pairs discovered via Feynman enrichment     │      │
+│  │   • Masking code flagged (ternary clamps, min caps)         │      │
+│  │   • Parallel path mismatches                                │      │
+│  │   • Coupled State Dependency Map                            │      │
+│  │   • Mutation Matrix                                         │      │
+│  └────────────────────────────────────────────────────────────┘      │
+│                           ↓ feed back                                 │
+│  ┌────────────────────────────────────────────────────────────┐      │
+│  │ PASS 3 — FEYNMAN RE-INTERROGATION (targeted, not full)     │      │
+│  │                                                             │      │
+│  │ Scope: ONLY functions/state touched by Pass 2's NEW output  │      │
+│  │ DO NOT re-audit what Pass 1 already cleared.                │      │
+│  │                                                             │      │
+│  │ For each State GAP from Pass 2:                             │      │
+│  │   Q: "WHY doesn't [function] update [coupled state B]?"    │      │
+│  │   Q: "What ASSUMPTION led to this gap?"                    │      │
+│  │   Q: "What DOWNSTREAM function reads B and breaks?"        │      │
+│  │   Q: "Can an attacker CHOOSE a sequence to exploit this?"  │      │
+│  │                                                             │      │
+│  │ For each MASKING CODE from Pass 2:                          │      │
+│  │   Q: "WHY would this ever underflow/overflow?"             │      │
+│  │   Q: "What invariant is ACTUALLY broken underneath?"       │      │
+│  │   → Trace the broken invariant to its root cause mutation  │      │
+│  │                                                             │      │
+│  │ For each NEW COUPLED PAIR from Pass 2:                      │      │
+│  │   Q: "Is this coupling intentional or accidental?"         │      │
+│  │   Q: "What ordering constraints exist between the pair?"   │      │
+│  │   Q: "What happens across multiple txs as both drift?"     │      │
+│  │                                                             │      │
+│  │ Output:                                                     │      │
+│  │   • New findings (.audit/findings/feynman-pass3.md)         │      │
+│  │   • New suspects (if any)                                   │      │
+│  │   • Deeper root cause analysis on Pass 2 gaps              │      │
+│  │   • Multi-tx adversarial sequences for confirmed bugs      │      │
+│  └────────────────────────────────────────────────────────────┘      │
+│                           ↓ feed back                                 │
+│  ┌────────────────────────────────────────────────────────────┐      │
+│  │ PASS 4 — STATE RE-ANALYSIS (targeted, not full)            │      │
+│  │                                                             │      │
+│  │ Scope: ONLY new coupled pairs + mutation paths from Pass 3  │      │
+│  │ DO NOT re-audit what Pass 2 already cleared.                │      │
+│  │                                                             │      │
+│  │ For each NEW SUSPECT from Pass 3:                           │      │
+│  │   → Is this suspect state part of a coupled pair?           │      │
+│  │   → Does the suspect function update all counterparts?      │      │
+│  │   → Does the root cause analysis reveal additional gaps?    │      │
+│  │                                                             │      │
+│  │ For each ROOT CAUSE from Pass 3:                            │      │
+│  │   → Trace the root cause mutation through ALL code paths    │      │
+│  │   → Check parallel paths for the same root cause            │      │
+│  │   → Check if the root cause affects other coupled pairs     │      │
+│  │                                                             │      │
+│  │ Output:                                                     │      │
+│  │   • New findings (.audit/findings/state-pass4.md)           │      │
+│  │   • Any remaining gaps or suspects                          │      │
+│  └────────────────────────────────────────────────────────────┘      │
+│                           ↓                                           │
+│  ┌────────────────────────────────────────────────────────────┐      │
+│  │ CONVERGENCE CHECK                                           │      │
+│  │                                                             │      │
+│  │ Did the last pass produce ANY new:                          │      │
+│  │   - Findings not in previous passes?                        │      │
+│  │   - Coupled pairs not previously mapped?                    │      │
+│  │   - Suspects not previously flagged?                        │      │
+│  │   - Root causes not previously traced?                      │      │
+│  │                                                             │      │
+│  │ IF YES → Continue: Run Pass N+1 (alternate Feynman/State)  │      │
+│  │           Scope: ONLY new items from the previous pass      │      │
+│  │                                                             │      │
+│  │ IF NO  → Converged. Proceed to Final Phase.                │      │
+│  │                                                             │      │
+│  │ SAFETY: Maximum 6 total passes (3 Feynman + 3 State)       │      │
+│  │         to prevent infinite loops.                          │      │
+│  └────────────────────────────────────────────────────────────┘      │
+│                                                                       │
+│  ════════════════════════════════════════════════════════════════      │
+│  ║              ITERATIVE LOOP ENDS                            ║      │
+│  ════════════════════════════════════════════════════════════════      │
+│                                                                       │
+│  FINAL PHASE: CONSOLIDATION                                           │
+│  ───────────────────────────                                          │
+│  1. Merge all pass outputs into unified finding set                   │
+│  2. Deduplicate (same root cause found from both sides)               │
+│  3. Multi-Tx adversarial sequence tracing on ALL confirmed bugs       │
+│  4. Final Verification Gate (code trace + PoC for all C/H/M)          │
+│  5. Tag each finding with discovery path:                             │
+│     • "Feynman-only" — found in Pass 1, never enriched by State      │
+│     • "State-only" — found in Pass 2, never enriched by Feynman      │
+│     • "Cross-feed P[N]→P[M]" — found via back-and-forth interaction  │
+│  6. Output: .audit/findings/nemesis-verified.md                       │
+│                                                                       │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**KEY RULES FOR THE ITERATIVE LOOP:**
+
+```
+1. Pass 1 (Feynman) and Pass 2 (State) are FULL skill runs — complete pipelines.
+   They establish the baseline.
+
+2. Pass 3+ are TARGETED — only audit new items surfaced by the previous pass.
+   Do NOT re-audit what was already cleared. This prevents redundant work
+   while ensuring every new discovery gets deep analysis from both perspectives.
+
+3. Each pass MUST produce a delta — what's NEW compared to all previous passes.
+   The delta is what feeds the next pass. No delta = convergence.
+
+4. Alternate strictly: Feynman → State → Feynman → State → ...
+   Never run the same auditor twice in a row.
+
+5. Maximum 6 total passes (3 Feynman + 3 State). In practice, most audits
+   converge in 3-4 passes (Pass 1 + Pass 2 + 1-2 targeted re-passes).
+
+6. Track the DISCOVERY PATH for every finding. Findings that emerged from
+   cross-feed (e.g., "State gap in Pass 2 → Feynman root cause in Pass 3")
+   are the highest-value discoveries — they prove the loop's worth.
+```
+
+---
+
+## Core Philosophy
+
+```
+Feynman alone finds logic bugs but may miss state coupling gaps.
+State Mapper alone finds desync bugs but may miss WHY the state was designed that way.
+
+NEMESIS runs them BACK AND FORTH — each pass feeds the next.
+
+The iterative loop:
+┌─────────────────────────────────────────────────────────────┐
+│                                                              │
+│   PASS 1 — FEYNMAN (full run):                               │
+│   "WHY does this state update exist?"                        │
+│   → Finds: ordering bugs, assumption violations, suspects    │
+│   → Exposes: "This line maintains invariant X with State B"  │
+│                                                              │
+│        ↓ feed suspects + assumptions + matrix forward        │
+│                                                              │
+│   PASS 2 — STATE (full run, enriched by Pass 1):             │
+│   "Do ALL paths that touch A also touch B?"                  │
+│   → Uses Feynman suspects as extra audit targets             │
+│   → Uses exposed assumptions to discover NEW coupled pairs   │
+│   → Finds: gaps, masking code, parallel path mismatches      │
+│                                                              │
+│        ↓ feed gaps + masking code + new pairs back           │
+│                                                              │
+│   PASS 3 — FEYNMAN (targeted re-interrogation):              │
+│   "WHY doesn't liquidate() update B?"                        │
+│   "What assumption led to this gap?"                         │
+│   "What breaks downstream after N transactions?"             │
+│   → Root cause analysis on State's gaps                      │
+│   → NEW suspects emerge from deeper questioning              │
+│                                                              │
+│        ↓ feed new suspects + root causes back                │
+│                                                              │
+│   PASS 4 — STATE (targeted re-analysis):                     │
+│   "Does this root cause affect OTHER coupled pairs?"         │
+│   "Do parallel paths share the same root cause?"             │
+│   → Finds ADDITIONAL gaps via root cause propagation         │
+│                                                              │
+│        ↓ ... continue until convergence ...                  │
+│                                                              │
+│   CONVERGED — No new findings in the last pass.              │
+│   Consolidate + verify + deliver.                            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Core Rules
+
+```
+RULE 0: THE ITERATIVE LOOP IS MANDATORY
+Never run Feynman and State Mapper as isolated one-shot passes.
+They MUST alternate back and forth. Each pass feeds the next.
+The loop runs until no new findings emerge.
+
+RULE 1: FULL FIRST, TARGETED AFTER
+Pass 1 (Feynman) and Pass 2 (State) are FULL skill runs.
+Pass 3+ are TARGETED — only audit the delta from the previous pass.
+Never re-audit what was already cleared. Always go deeper on what's new.
+
+RULE 2: EVERY COUPLED PAIR GETS INTERROGATED
+The State Mapper finds pairs. Feynman interrogates each one:
+"Why are these coupled? What invariant links them? Is the
+invariant ACTUALLY maintained by every mutation path?"
+
+RULE 3: EVERY FEYNMAN SUSPECT GETS STATE-TRACED
+When Feynman flags a line as SUSPECT, the State Mapper traces
+every state variable that line touches, maps all their coupled
+dependencies, and checks if the suspicion propagates.
+
+RULE 4: PARTIAL OPERATIONS + ORDERING = GOLD
+The intersection of "partial state change" (State Mapper's
+specialty) and "operation ordering" (Feynman's Category 2 & 7)
+is where the highest-value bugs live.
+
+RULE 5: DEFENSIVE CODE IS A SIGNAL, NOT A SOLUTION
+When the State Mapper finds masking code (ternary clamps, min caps),
+Feynman interrogates WHY it exists. The mask reveals the invariant
+that's actually broken underneath.
+
+RULE 6: EVIDENCE OR SILENCE
+No finding without: coupled pair, breaking operation, trigger
+sequence, downstream consequence, and verification.
+```
+
+---
+
+## Language Adaptation
+
+Detect the language and adapt. The questions and methodology are universal.
+
+| Concept | Solidity | Move | Rust | Go | C++ |
+|---------|----------|------|------|----|-----|
+| Module/unit | contract | module | crate/mod | package | class/namespace |
+| Entry point | external/public fn | public fun | pub fn | Exported fn | public method |
+| State storage | storage variables | global storage / resources | struct fields / state | struct fields / DB | member variables |
+| Access guard | modifier | access control / friend | trait bound / #[cfg] | middleware / auth | access specifier |
+| Mapping | mapping(k => v) | Table\<K, V\> | HashMap / BTreeMap | map[K]V | std::map |
+| Delete | delete mapping[key] | table::remove | map.remove(&key) | delete(map, key) | map.erase(key) |
+| Caller identity | msg.sender | &signer | caller / Context | ctx / request.User | this / session |
+| Error/abort | revert / require | abort / assert! | panic! / Result::Err | error / panic | throw / exception |
+| Checked math | 0.8+ auto / SafeMath | built-in overflow abort | checked_add | math/big | safe int libs |
+| External call | .call() / interface | cross-module call | CPI (Solana) | RPC / HTTP | virtual call |
+| Test framework | Foundry / Hardhat | Move Prover / aptos test | cargo test | go test | gtest / catch2 |
+
+---
+
+## The Nemesis Execution Pipeline
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│                    N E M E S I S   P I P E L I N E                │
+├───────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  RECON         Phase 0: Attacker Mindset + Hit List               │
+│  ─────         (Feynman Q0.1-Q0.4 + State value store mapping)   │
+│                                                                    │
+│  FOUNDATION    Phase 1: Dual Mapping                              │
+│  ──────────    ├─ Feynman: Function-State Matrix                  │
+│                └─ State:   Coupled State Dependency Map           │
+│                                                                    │
+│  HUNT PASS 1   Phase 2: Feynman Interrogation (all 7 categories) │
+│  ───────────   Each SUSPECT verdict → fed to Phase 3              │
+│                                                                    │
+│  HUNT PASS 2   Phase 3: State Cross-Check                         │
+│  ───────────   Mutation Matrix + Parallel Path Comparison         │
+│                + Feynman suspects as extra audit targets           │
+│                                                                    │
+│  FEEDBACK      Phase 4: The Nemesis Loop                          │
+│  ────────      ├─ State gaps → Feynman re-interrogation           │
+│                ├─ Feynman findings → State dependency expansion    │
+│                ├─ Masking code → Feynman "WHY" questioning        │
+│                └─ Loop until convergence (no new findings)        │
+│                                                                    │
+│  SEQUENCES     Phase 5: Multi-Transaction Journey Tracing         │
+│  ─────────     Adversarial sequences across both dimensions       │
+│                                                                    │
+│  VERIFY        Phase 6: Verification Gate                         │
+│  ──────        Code trace + PoC for all C/H/M findings            │
+│                                                                    │
+│  DELIVER       Phase 7: Final Report                              │
+│  ───────       Only TRUE POSITIVES. Zero noise.                   │
+│                                                                    │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Phase 0: Attacker Recon (BEFORE reading code)
+
+Combine Feynman's attacker mindset with State Mapper's value tracking:
+
+```
+Q0.1: ATTACK GOALS — What's the WORST an attacker can achieve?
+      List top 3-5 catastrophic outcomes. These drive the entire audit.
+
+Q0.2: NOVEL CODE — What's NOT a fork of battle-tested code?
+      Custom math, novel mechanisms, unique state machines = highest bug density.
+
+Q0.3: VALUE STORES — Where does value actually sit?
+      Map every module that holds funds, assets, accounting state.
+      For each: what code path moves value OUT? What authorizes it?
+
+Q0.4: COMPLEX PATHS — What's the most complex interaction path?
+      Paths crossing 4+ modules with 3+ external calls = prime targets.
+
+Q0.5: COUPLED VALUE — Which value stores have DEPENDENT accounting?
+      (NEW — State Mapper contribution to recon)
+      For each value store from Q0.3, ask: "What other storage must
+      stay in sync with this?" Build the initial coupling hypothesis
+      BEFORE reading code. The code will confirm or reveal more.
+```
+
+**Output:** Attacker's Hit List + Initial Coupling Hypothesis
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ PHASE 0 — NEMESIS RECON                                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│ LANGUAGE: [detected]                                         │
+│                                                              │
+│ ATTACK GOALS:                                                │
+│   1. [worst outcome]                                         │
+│   2. [second worst]                                          │
+│   3. [third worst]                                           │
+│                                                              │
+│ NOVEL CODE (highest bug density):                            │
+│   - [module] — [why novel]                                   │
+│                                                              │
+│ VALUE STORES + INITIAL COUPLING HYPOTHESIS:                  │
+│   - [module] holds [asset]                                   │
+│     Outflows: [functions]                                    │
+│     Suspected coupled state: [what must sync]                │
+│                                                              │
+│ COMPLEX PATHS:                                               │
+│   - [path] — [modules involved]                              │
+│                                                              │
+│ PRIORITY ORDER:                                              │
+│   1. [target] — appears in [N] answers above                 │
+│   2. [target] — appears in [N] answers above                 │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Phase 1: Dual Mapping (Foundation for both auditors)
+
+Run both mapping operations simultaneously. They share the same codebase scan.
+
+#### 1A: Function-State Matrix (Feynman foundation)
+
+```
+For each module, list:
+- ALL entry points (public/exported/external functions)
+- ALL state they read/write
+- ALL access guards applied
+- ALL internal functions they call
+- ALL external calls they make
+
+| Function | Reads | Writes | Guards | Internal Calls | External Calls |
+|----------|-------|--------|--------|----------------|----------------|
+```
+
+#### 1B: Coupled State Dependency Map (State Mapper foundation)
+
+```
+For every storage variable, ask:
+"What other storage values MUST change when this one changes?"
+
+Build the dependency graph:
+  State A changes → State B MUST change (invariant: [relationship])
+  State C changes → State D AND State E MUST change
+
+Look for:
+- per-user balance ↔ per-user accumulator/tracker/checkpoint
+- numerator ↔ denominator
+- position size ↔ position-derived values (health, rewards, shares)
+- total/aggregate ↔ sum of individual components
+- any cached computation ↔ inputs it was derived from
+- any index/accumulator ↔ last-snapshot of that index per user
+```
+
+#### 1C: Cross-Reference (THE NEMESIS DIFFERENCE)
+
+```
+Overlay the two maps:
+
+For each COUPLED PAIR from 1B:
+  → Find ALL functions from 1A that WRITE to either side
+  → Mark which functions update BOTH sides vs only ONE side
+  → Functions that update only ONE side = PRIMARY AUDIT TARGETS
+
+For each FUNCTION from 1A:
+  → List ALL state variables it writes
+  → For each written variable, check 1B: is it part of a coupled pair?
+  → If yes: does this function ALSO write the coupled counterpart?
+  → If no: mark as STATE GAP — feed to Phase 3 AND Phase 4
+```
+
+**Output:** Unified Nemesis Map — functions × state × couplings × gaps
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ NEMESIS MAP — Phase 1 Cross-Reference                              │
+├───────────────┬──────────┬──────────┬──────────┬──────────────────┤
+│ Function      │ Writes A │ Writes B │ A↔B Pair │ Sync Status      │
+├───────────────┼──────────┼──────────┼──────────┼──────────────────┤
+│ deposit()     │ ✓        │ ✓        │ bal↔chk  │ ✓ SYNCED         │
+│ withdraw()    │ ✓        │ ✓        │ bal↔chk  │ ✓ SYNCED         │
+│ transfer()    │ ✓        │ ✗        │ bal↔chk  │ ✗ GAP → Phase 4  │
+│ liquidate()   │ ✓        │ ✗        │ bal↔chk  │ ✗ GAP → Phase 4  │
+│ emergencyW()  │ ✓        │ ✗        │ bal↔chk  │ ✗ GAP → Phase 4  │
+└───────────────┴──────────┴──────────┴──────────┴──────────────────┘
+```
+
+---
+
+### Phase 2: Feynman Interrogation (Hunt Pass 1)
+
+Apply ALL 7 Feynman Question Categories to every function, in priority order from Phase 0.
+
+**Categories (28+ core questions):**
+
+```
+Category 1: Purpose      — WHY is this line here? What breaks if deleted?
+Category 2: Ordering      — What if this line moves up/down? State gap window?
+Category 3: Consistency   — WHY does funcA have this guard but funcB doesn't?
+Category 4: Assumptions   — What is implicitly trusted about caller/data/state/time?
+Category 5: Boundaries    — First call, last call, double call, self-reference?
+Category 6: Return/Error  — Ignored returns, silent failures, fallthrough paths?
+Category 7: Call Reorder  — Swap external call before/after state update?
+            + Multi-Tx    — Same function, different values, across time?
+```
+
+For each function:
+```
+┌─────────────────────────────────────────────────────────────┐
+│ FUNCTION: [module.functionName]                              │
+│ Priority: [from Phase 0 hit list]                            │
+│                                                              │
+│ LINE-BY-LINE INTERROGATION:                                  │
+│                                                              │
+│ L[N]: [code line]                                            │
+│   Q[x.y] → [answer]                                         │
+│   → VERDICT: SOUND | SUSPECT | VULNERABLE                   │
+│   → If SUSPECT: [specific scenario]                          │
+│   → STATE FEED: [state variables touched — feed to Phase 3]  │
+│                                                              │
+│ FUNCTION VERDICT: SOUND | HAS_CONCERNS | VULNERABLE          │
+│                                                              │
+│ SUSPECTS FOR STATE MAPPER (feed to Phase 3):                 │
+│   - [state var] — [why suspicious from Feynman questioning]  │
+│   - [ordering concern] — [which states are in the gap]       │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Critical — Category 7 deep checks:**
+
+For every external call in every function:
+1. **Swap test**: Move the external call before/after state updates. Does it revert? If not, the original ordering may be exploitable.
+2. **Callee power audit**: At the moment of the external call, what state is committed vs pending? What can the callee observe or manipulate?
+3. **Multi-tx state corruption**: Call the function with value X, then again with value Y. Does the second call use stale state from the first? Does accumulated state from many calls create unreachable conditions?
+
+**Feed forward**: Every SUSPECT verdict and every state variable touched by suspect code is passed to Phase 3 as an additional audit target.
+
+---
+
+### Phase 3: State Cross-Check (Hunt Pass 2)
+
+The State Mapper now runs its full analysis, ENRICHED by Feynman's Phase 2 output.
+
+#### 3A: Mutation Matrix
+
+For EACH state variable (including new ones Feynman flagged):
+```
+List every function that modifies it:
+- Direct writes, increments, decrements, deletions
+- Indirect mutations (internal calls, hooks, callbacks)
+- Implicit changes (burns, rebases, external triggers)
+
+┌──────────────────┬───────────────────┬───────────────────────────┐
+│ State Variable   │ Mutating Function │ Updates Coupled State?    │
+├──────────────────┼───────────────────┼───────────────────────────┤
+│ [var]            │ [function]        │ ✓ / ✗ GAP / ??? CHECK    │
+└──────────────────┴───────────────────┴───────────────────────────┘
+```
+
+#### 3B: Parallel Path Comparison
+
+```
+Group functions that achieve similar outcomes:
+- transfer() vs burn() — both reduce sender balance
+- withdraw() vs liquidate() — both reduce position
+- partial vs full removal
+- direct vs wrapper call
+- normal vs emergency/admin path
+- single vs batch operation
+
+For each group: do ALL paths update the SAME coupled state?
+
+┌─────────────────┬──────────────┬──────────────┬────────────┐
+│ Coupled State   │ Path A       │ Path B       │ Path C     │
+├─────────────────┼──────────────┼──────────────┼────────────┤
+│ [state pair]    │ ✓/✗          │ ✓/✗          │ ✓/✗        │
+└─────────────────┴──────────────┴──────────────┴────────────┘
+```
+
+#### 3C: Operation Ordering Within Functions
+
+```
+Trace the exact order of state changes in each function:
+
+step 1: reads A and B → computes result
+step 2: modifies B based on result
+step 3: modifies A
+// B is now stale relative to new A — gap between step 2 and step 3
+
+At each step ask:
+- Are ALL coupled pairs still consistent RIGHT HERE?
+- Does step N use a value that step N-1 already invalidated?
+- If an external call happens between steps, can the callee see
+  inconsistent state?
+```
+
+#### 3D: Feynman-Enriched Targets
+
+```
+For each SUSPECT from Phase 2:
+  → The State Mapper now specifically checks:
+    1. Is the suspect state variable part of a coupled pair?
+    2. Does the suspect function update all coupled counterparts?
+    3. Does the ordering concern from Feynman create a state gap
+       that the State Mapper can now measure?
+
+This is where the FEEDBACK LOOP produces findings that NEITHER
+auditor would find alone.
+```
+
+**Feed forward**: Every GAP from Phase 3 is passed to Phase 4 for Feynman re-interrogation.
+
+---
+
+### Phase 4: The Nemesis Loop (FEEDBACK — the core innovation)
+
+This is what makes Nemesis more than the sum of its parts. The two auditors now interrogate EACH OTHER'S findings.
+
+```
+LOOP {
+    ┌─────────────────────────────────────────────────────────┐
+    │ STEP A: State Mapper gaps → Feynman re-interrogation    │
+    │                                                          │
+    │ For each GAP found in Phase 3:                           │
+    │   Feynman asks:                                          │
+    │   Q: "WHY doesn't [function] update [coupled state B]    │
+    │       when it modifies [state A]?"                       │
+    │   Q: "What ASSUMPTION is the developer making about      │
+    │       when [coupled state B] gets updated?"              │
+    │   Q: "What DOWNSTREAM function reads [state B] and       │
+    │       would produce a wrong result from the stale value?"│
+    │   Q: "Can an attacker CHOOSE a sequence that exploits    │
+    │       this gap before [state B] gets reconciled?"        │
+    │                                                          │
+    │ → If Feynman finds the gap is real: FINDING              │
+    │ → If Feynman finds lazy reconciliation: FALSE POSITIVE   │
+    │ → If Feynman finds a NEW coupled pair: feed back to 3    │
+    └─────────────────────────────────────────────────────────┘
+            │
+            ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │ STEP B: Feynman findings → State dependency expansion    │
+    │                                                          │
+    │ For each Feynman SUSPECT/VULNERABLE verdict:             │
+    │   State Mapper asks:                                     │
+    │   Q: "Does this suspicious line WRITE to a state that    │
+    │       is part of a coupled pair I haven't mapped yet?"   │
+    │   Q: "Does the ordering concern create a WINDOW where    │
+    │       coupled state is inconsistent?"                    │
+    │   Q: "Does the assumption violation mean a coupled       │
+    │       state's invariant is based on a false premise?"    │
+    │                                                          │
+    │ → If State Mapper finds new coupling: add to map,        │
+    │   re-run 3A-3C for the new pair                          │
+    │ → If no new coupling: Feynman finding stands alone       │
+    └─────────────────────────────────────────────────────────┘
+            │
+            ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │ STEP C: Masking code → Joint interrogation               │
+    │                                                          │
+    │ For each defensive/masking pattern found:                │
+    │   (ternary clamps, min caps, try/catch, early returns)   │
+    │                                                          │
+    │   Feynman asks: "WHY would this ever underflow/overflow? │
+    │     What invariant is ACTUALLY broken underneath?"       │
+    │                                                          │
+    │   State Mapper asks: "Which coupled pair's desync is     │
+    │     this mask hiding? Trace the pair to find the root    │
+    │     mutation that broke the invariant."                  │
+    │                                                          │
+    │ → Combined answer: the mask, the broken invariant,       │
+    │   the root cause mutation, and the downstream impact     │
+    └─────────────────────────────────────────────────────────┘
+            │
+            ↓
+    ┌─────────────────────────────────────────────────────────┐
+    │ STEP D: Convergence check                                │
+    │                                                          │
+    │ Did Steps A-C produce ANY new:                           │
+    │   - Coupled pairs not in the Phase 1 map?               │
+    │   - Mutation paths not in the Phase 3 matrix?           │
+    │   - Feynman suspects not in the Phase 2 output?         │
+    │   - Masking patterns not previously flagged?            │
+    │                                                          │
+    │ IF YES → loop back to STEP A with expanded scope        │
+    │ IF NO  → converged. Proceed to Phase 5.                 │
+    │                                                          │
+    │ SAFETY: Maximum 3 loop iterations to prevent runaway.   │
+    └─────────────────────────────────────────────────────────┘
+}
+```
+
+---
+
+### Phase 5: Multi-Transaction Journey Tracing
+
+Now that both auditors have converged, trace adversarial sequences that exploit findings from BOTH dimensions.
+
+```
+For each finding from Phases 2-4, construct a MINIMAL trigger sequence:
+
+SEQUENCE TEMPLATE:
+  1. Initial state (clean)
+  2. Operation that modifies State A (coupled to B)
+  3. [Optional: time passes / external state evolves]
+  4. Operation that SHOULD update B but DOESN'T (the gap)
+  5. [Optional: repeat steps 2-4 to compound the error]
+  6. Operation that reads BOTH A and B → produces wrong result
+
+ADVERSARIAL SEQUENCES TO ALWAYS TEST:
+  - Deposit → partial withdraw → claim rewards
+    (rewards computed on which balance? old or new?)
+
+  - Stake → unstake half → restake → unstake all
+    (reward debt accumulated correctly through each step?)
+
+  - Open position → add collateral → partial close → health check
+    (cached health factor updated at each step?)
+
+  - Provide liquidity → swaps happen → remove liquidity
+    (fee tracking correct through reserve changes?)
+
+  - Delegate votes → transfer tokens → vote
+    (voting power reflects current balance?)
+
+  - Borrow → partial repay → borrow again → check debt
+    (interest accumulator rebased at each step?)
+
+  - Swap with value X → swap with value Y → claim fees
+    (fee accumulator path-dependent? See worked example below)
+
+MULTI-TX STATE CORRUPTION — WORKED EXAMPLE:
+  ─────────────────────────────────────────
+  AMM pool with swap() that:
+    1. Calculates amountOut based on reserves
+    2. Updates accumulatedFees (for LP fee distribution)
+    3. Updates reserves
+
+  TX1: Alice swaps 1000 tokenA → tokenB (0.3% fee)
+    - fee = 3 tokenA added to accFees BEFORE reserves update
+    - reserves shift: reserveA=11000, reserveB≈9091
+
+  TX2: Bob swaps 500 tokenA → tokenB
+    - fee = 1.5 tokenA added to accFees
+    - feePerLP calculated using STALE reserve ratio from pre-TX1
+    - 1 tokenA is now worth LESS in the pool, but fee accounting
+      doesn't know that
+
+  TX3: Charlie claims LP fees
+    - Gets paid based on accFees=4.5 at OLD token valuation
+    - Pool composition has shifted — fees are denominated in a
+      token whose relative value changed
+    - Result: early LPs overpaid, late LPs underpaid
+
+  Root cause: accFees accumulator doesn't rebase against current
+  reserve ratio. Each swap changes what "1 unit of fee" means,
+  but the accumulator treats all units as equal.
+
+  GENERALIZE: Any global accumulator (fees, rewards, interest)
+  updated per-tx where the VALUE of what's accumulated changes
+  between txs, and the accumulator doesn't normalize.
+
+  CHECK: After N operations with varying sizes, does
+  SUM(individual fees) == fee on AGGREGATE operation?
+  If not → path-dependent accumulator → exploitable.
+```
+
+---
+
+### Phase 6: Verification Gate (MANDATORY)
+
+**Every CRITICAL, HIGH, and MEDIUM finding MUST be verified.**
+
+#### Methods:
+
+**Method A: Deep Code Trace**
+1. Read exact lines cited
+2. Trace complete call chain (caller → callee → downstream)
+3. Check for mitigating code elsewhere (guards, hooks, lazy reconciliation)
+4. Confirm scenario is reachable end-to-end
+5. Verdict: TRUE POSITIVE / FALSE POSITIVE / DOWNGRADE
+
+**Method B: PoC Test**
+1. Write test in project's native framework
+2. Execute the exact trigger sequence from the finding
+3. Assert state inconsistency after the breaking operation
+4. Assert incorrect result in the downstream operation
+5. Verdict: TRUE POSITIVE / FALSE POSITIVE
+
+**Method C: Hybrid** (trace + PoC) for complex multi-module findings.
+
+#### Common False Positive Patterns (from BOTH auditors):
+
+```
+1. HIDDEN RECONCILIATION: Coupled state IS updated, but through an
+   internal call chain you missed (_beforeTokenTransfer hook, modifier
+   that runs _updateReward before every function).
+
+2. LAZY EVALUATION: Coupled state is intentionally stale and reconciled
+   on next READ, not on every WRITE. The desync is by design.
+
+3. IMMUTABLE AFTER INIT: The coupled state is set once and never needs
+   updating because both sides are frozen after initialization.
+
+4. DESIGNED ASYMMETRY: The states are intentionally NOT coupled the way
+   you assumed. Read docs/comments before reporting.
+
+5. LANGUAGE SAFETY: Finding claims overflow but the language aborts on
+   overflow by default (Solidity >=0.8, Move, Rust debug).
+
+6. SEVERITY INFLATION: Finding claims "value loss" but actual impact is
+   "confusing error message" because a downstream check catches it.
+
+7. ECONOMIC INFEASIBILITY: The attack costs more than it gains.
+   Flash loans don't make everything free — compute the actual profit.
+```
+
+#### Verification Output per Finding:
+
+```
+Finding NM-XXX: [Title]
+├─ Verification method: [A / B / C]
+├─ Code trace: [paths traced, mitigations checked]
+├─ PoC result: [test name, pass/fail, key output]
+├─ Mitigating factors found: [none / list]
+└─ VERDICT: TRUE POSITIVE [severity] / FALSE POSITIVE [reason] / DOWNGRADE [from→to]
+```
+
+---
+
+### Phase 7: Final Report
+
+Save to: `.audit/findings/nemesis-verified.md`
+
+```markdown
+# N E M E S I S — Verified Findings
+
+## Scope
+- Language: [detected]
+- Modules analyzed: [list]
+- Functions analyzed: [count]
+- Coupled state pairs mapped: [count]
+- Mutation paths traced: [count]
+- Nemesis loop iterations: [count]
+
+## Nemesis Map (Phase 1 Cross-Reference)
+[Unified map: functions × state × couplings × gaps]
+
+## Verification Summary
+| ID | Source | Coupled Pair | Breaking Op | Severity | Verdict |
+|----|--------|-------------|-------------|----------|---------|
+| NM-001 | Feynman→State | A↔B | func() | HIGH | TRUE POS |
+| NM-002 | State→Feynman | C↔D | func2() | MEDIUM | TRUE POS |
+| NM-003 | Loop Step C | E↔F | func3() | HIGH | DOWNGRADE→MED |
+| NM-004 | Feynman only | — | func4() | MEDIUM | FALSE POS |
+
+## Verified Findings (TRUE POSITIVES only)
+
+### Finding NM-001: [Title]
+**Severity:** CRITICAL | HIGH | MEDIUM | LOW
+**Source:** [Which auditor found it, or "Feedback Loop Step X"]
+**Verification:** [Code trace / PoC / Hybrid]
+
+**Coupled Pair:** State A ↔ State B
+**Invariant:** [What relationship must hold]
+
+**Feynman Question that exposed it:**
+> [The exact question]
+
+**State Mapper gap that confirmed it:**
+> [The mutation matrix entry showing the missing update]
+
+**Breaking Operation:** `functionName()` at `File.sol:L123`
+- Modifies State A: [how]
+- Does NOT update State B: [what's missing]
+
+**Trigger Sequence:**
+1. [Step-by-step]
+2. [Minimal adversarial sequence]
+
+**Consequence:**
+- [What goes wrong downstream]
+- [Concrete impact with numbers]
+
+**Masking Code** (if present):
+```[language]
+// This defensive code hides the broken invariant:
+[code]
+```
+
+**Verification Evidence:**
+[Code trace paths / PoC test output / concrete numbers]
+
+**Fix:**
+```[language]
+// Add the missing state synchronization:
+[minimal fix]
+```
+
+---
+
+## Feedback Loop Discoveries
+[Findings that ONLY emerged from the cross-feed between auditors —
+bugs that neither Feynman alone nor State Mapper alone would have found]
+
+## False Positives Eliminated
+[Findings that failed verification, with explanation]
+
+## Downgraded Findings
+[Findings where severity was reduced, with justification]
+
+## Summary
+- Total functions analyzed: [N]
+- Coupled state pairs mapped: [N]
+- Nemesis loop iterations: [N]
+- Raw findings (pre-verification): [N] C | [N] H | [N] M | [N] L
+- Feedback loop discoveries: [N] (found ONLY via cross-feed)
+- After verification: [N] TRUE POSITIVE | [N] FALSE POSITIVE | [N] DOWNGRADED
+- Final: [N] CRITICAL | [N] HIGH | [N] MEDIUM | [N] LOW
+```
+
+Also save intermediate work to: `.audit/findings/nemesis-raw.md`
+
+---
+
+## Red Flags Checklist (Combined)
+
+```
+FROM FEYNMAN:
+- [ ] A line of code whose PURPOSE you cannot explain
+- [ ] An ordering choice with no clear justification
+- [ ] A guard on funcA that's missing from funcB (same state)
+- [ ] An implicit trust assumption about caller/data/state/time
+- [ ] External call with state updates AFTER it (stale state window)
+- [ ] Function behaves differently on 2nd call due to 1st call's state change
+
+FROM STATE MAPPER:
+- [ ] Function modifies State A but has no writes to coupled State B
+- [ ] Two similar operations handle coupled state differently
+- [ ] Claim/collect runs before reduce/remove with no reconciliation
+- [ ] Partial operation exists but only full operation resets coupled state
+- [ ] Defensive ternary/min() between two coupled values (WHY underflow?)
+- [ ] delete/reset of one mapping but not its paired mapping
+- [ ] Loop accumulates into shared state without per-iteration adjustment
+- [ ] Emergency/admin function bypasses normal state update path
+
+FROM THE FEEDBACK LOOP:
+- [ ] Feynman found an ordering concern + State Mapper found a gap in the
+      SAME function → compound finding
+- [ ] State Mapper found masking code + Feynman explained WHY the invariant
+      is broken underneath → root cause finding
+- [ ] Feynman found an assumption about state freshness + State Mapper
+      confirmed the state IS stale after a specific mutation path
+- [ ] Both auditors flagged the SAME function from different angles
+      → highest confidence finding
+```
+
+---
+
+## Severity Classification
+
+| Severity | Criteria |
+|----------|----------|
+| **CRITICAL** | Direct value loss, permanent DoS, or system insolvency. Exploitable now. |
+| **HIGH** | Conditional value loss, privilege escalation, or broken core invariant |
+| **MEDIUM** | Value leakage, griefing with cost, incorrect accounting, degraded functionality |
+| **LOW** | Informational, cosmetic inconsistency, edge-case-only with no material impact |
+
+---
+
+## Post-Audit Actions
+
+| Scenario | Action |
+|----------|--------|
+| Need deeper protocol context | Re-read the relevant contracts and documentation |
+| Finding needs formal report | Write up with severity, trigger sequence, PoC, and fix |
+| Need exploit validation | Write a Foundry/Hardhat PoC test to confirm |
+| Uncertain about design intent | Check NatSpec, comments, and project documentation |
+
+---
+
+## Anti-Hallucination Protocol
+
+```
+NEVER:
+- Invent code that doesn't exist in the codebase
+- Assume a coupled pair without finding code that reads BOTH values together
+- Claim a function is missing an update without tracing its full call chain
+- Report a finding without the exact code, trigger sequence, AND consequence
+- Force Solidity terminology onto non-Solidity code
+- Skip the feedback loop (Phase 4) — it's where the highest-value bugs emerge
+- Present raw findings as verified results
+
+ALWAYS:
+- Read actual code before questioning it
+- Verify coupled pairs by finding code that reads BOTH values
+- Trace internal calls for hidden updates (hooks, modifiers, base classes)
+- Check for lazy reconciliation patterns before reporting stale state
+- Show exact file paths and line numbers
+- Run the feedback loop until convergence
+- Present ONLY verified findings in the final report
+```
+
+---
+
+## Quick-Start Checklist
+
+```
+- [ ] Phase 0: Attacker recon (goals, novel code, value stores, coupling hypothesis)
+- [ ] Phase 1A: Build Function-State Matrix
+- [ ] Phase 1B: Build Coupled State Dependency Map
+- [ ] Phase 1C: Cross-reference → Unified Nemesis Map
+- [ ] Phase 2: Feynman interrogation (all 7 categories, priority order)
+- [ ] Phase 2: Feed all SUSPECT verdicts to Phase 3
+- [ ] Phase 3A: Build Mutation Matrix (enriched by Feynman suspects)
+- [ ] Phase 3B: Parallel Path Comparison
+- [ ] Phase 3C: Operation Ordering check
+- [ ] Phase 3D: Feynman-Enriched Target analysis
+- [ ] Phase 4: THE NEMESIS LOOP
+- [ ]   Step A: State gaps → Feynman re-interrogation
+- [ ]   Step B: Feynman findings → State dependency expansion
+- [ ]   Step C: Masking code → Joint interrogation
+- [ ]   Step D: Convergence check (loop if new findings, max 3 iterations)
+- [ ] Phase 5: Multi-transaction journey tracing (adversarial sequences)
+- [ ] Phase 6: Verify ALL C/H/M findings (code trace + PoC)
+- [ ] Phase 6: Eliminate false positives
+- [ ] Phase 7: Save to .audit/findings/nemesis-verified.md
+- [ ] Phase 7: Present ONLY verified findings
+```
+
+
+================================================================
+FILE: Nemesis/skills/state-inconsistency-auditor/SKILL.md
+================================================================
+
+---
+name: state-inconsistency-auditor
+description: Finds state inconsistency bugs where an operation mutates one piece of coupled state without updating its dependent counterpart, causing silent data corruption or reverts in subsequent operations. Triggers on /state-audit, state inconsistency audit, or coupled state audit.
+---
+
+# State Inconsistency Auditor
+
+Finds bugs where an operation mutates one piece of coupled state without updating its dependent counterpart, causing silent data corruption or reverts in subsequent operations.
+
+**Language-agnostic by design.** Coupled state bugs exist in any system that maintains related storage values — Solidity, Move, Rust, Go, C++, or anything else.
+
+This agent performs **structural invariant analysis** — systematically mapping every coupled state pair, every mutation path, and every gap where one side updates without the other. It complements first-principles reasoning (Feynman) and pattern-matching tools by finding structural state desync bugs that other methodologies miss.
+
+## When to Activate
+
+- User says "/state-audit" or "state inconsistency audit" or "coupled state audit"
+- User wants to find stale state, broken invariants, or desynchronized storage
+- After any other audit methodology to catch what it missed
+
+## When NOT to Use
+
+- Quick pattern-matching scans where you only need known vulnerability patterns
+- First-principles logic bugs only (use `/feynman` instead)
+- Simple spec compliance checks
+- Report generation from existing findings
+
+---
+
+## The Abstract Pattern
+
+Every system has **COUPLED STATE PAIRS** — two or more storage values that must maintain a relationship (an invariant) with each other. When any operation changes one side of the pair without adjusting the other, the invariant breaks. Future operations that read both values produce incorrect results.
+
+Examples of coupled state:
+- balance & checkpoint
+- position size & accumulated tracker
+- collateral & obligation
+- voting power & snapshot
+- shares & any per-share derived value
+- principal & any cumulative index
+- totalSupply & sum of all individual balances
+- debt & interest accumulator
+- liquidity & fee growth trackers
+- stake amount & reward debt
+- token balance & voting delegation
+- position collateral & position health factor cache
+
+**The bug class:** Operation X correctly updates State A, but fails to proportionally adjust the coupled State B. State B is now stale relative to State A.
+
+---
+
+## Language Adaptation
+
+When you start, **detect the language** and adapt terminology:
+
+| Concept | Solidity | Move | Rust | Go | C++ |
+|---------|----------|------|------|----|-----|
+| Storage | state variables | global storage / resources | struct fields / state | struct fields / DB | member variables |
+| Mapping | mapping(k => v) | Table\<K, V\> / SmartTable | HashMap / BTreeMap | map[K]V | std::map / unordered_map |
+| Delete | delete mapping[key] | table::remove | map.remove(&key) | delete(map, key) | map.erase(key) |
+| Event | emit Event() | event::emit() | emit! / log | EventEmit() | signal / callback |
+| Internal call | internal function | friend function | pub(crate) fn | unexported func | private method |
+
+---
+
+## Core Rules
+
+```
+RULE 0: MAP BEFORE YOU HUNT
+Never start checking functions until you have the complete coupled state
+dependency map. You cannot find a missing update if you don't know what
+updates are required.
+
+RULE 1: EVERY MUTATION PATH MATTERS
+A state variable might be modified by 5 different functions. ALL 5 must
+update the coupled state. If 4 do and 1 doesn't — that's the bug.
+
+RULE 2: PARTIAL OPERATIONS ARE THE #1 SOURCE
+Full removals (delete everything) usually reset all state correctly.
+Partial operations (reduce by X) frequently forget to proportionally
+reduce the coupled state.
+
+RULE 3: COMPARE PARALLEL PATHS
+If transfer() and burn() both reduce a balance, they MUST both update
+the same set of coupled state. If one does and the other doesn't — finding.
+
+RULE 4: DEFENSIVE CODE MASKS BUGS
+Code like `x > y ? x - y : 0` or `min(computed, available)` silently
+hides broken invariants. These are red flags, not safety nets.
+
+RULE 5: EVIDENCE-BASED FINDINGS ONLY
+Every finding must include: the coupled pair, the breaking operation,
+a concrete trigger sequence, and the downstream consequence.
+```
+
+---
+
+## Audit Process
+
+### Phase 1: Map All Coupled State Pairs
+
+For every storage variable, ask: **"What other storage values must change when this one changes?"**
+
+Build a dependency map:
+
+```
+State A changes → State B MUST also change (and vice versa)
+State C changes → State D and State E MUST also change
+```
+
+Look for:
+- Any per-user value paired with any per-user accumulator/tracker
+- Any balance paired with any historical snapshot or checkpoint
+- Any numerator paired with its denominator
+- Any position-describing value paired with any position-derived value
+- Anything stored at time T that is later used with a value from time T+1
+- Any total/aggregate paired with individual components that sum to it
+- Any cached computation paired with the inputs it was derived from
+- Any index/accumulator paired with the last-known snapshot of that index
+
+**Output of Phase 1:** A Coupled State Dependency Map.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ COUPLED STATE DEPENDENCY MAP                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│ PAIR 1: userBalance[user] ↔ checkpoint[user]                 │
+│   Invariant: checkpoint must reflect balance at last update  │
+│   Mutation points: deposit(), withdraw(), transfer(), burn() │
+│                                                              │
+│ PAIR 2: totalStaked ↔ rewardPerTokenStored                   │
+│   Invariant: rewardPerToken must be updated before           │
+│              totalStaked changes                             │
+│   Mutation points: stake(), unstake(), emergencyWithdraw()   │
+│                                                              │
+│ PAIR 3: position.collateral ↔ position.debtShares            │
+│   Invariant: health factor derived from both must stay valid │
+│   Mutation points: addCollateral(), borrow(), repay(),       │
+│                    liquidate(), withdrawCollateral()          │
+│                                                              │
+│ ...                                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Phase 2: Find Every Operation That Mutates Each State
+
+For EACH state variable identified in Phase 1, list **every** function and code path that modifies it. Include:
+
+- **Direct writes**: `state = newValue`
+- **Increments/decrements**: `state += delta`, `state -= delta`
+- **Deletions**: `delete state`, `state = 0`, `state = default`
+- **Indirect mutations**: calling a function that internally modifies it (e.g., `_mint()`, `_burn()`, `_transfer()`)
+- **Implicit changes**: burning reduces balance via internal `_burn`, rebasing changes effective balance without explicit write
+- **Batch operations**: loops or multicalls that modify state multiple times
+- **External triggers**: callbacks, hooks, or oracle updates that modify state as a side effect
+
+**Output of Phase 2:** A Mutation Matrix.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ MUTATION MATRIX                                                   │
+├──────────────────┬───────────────────┬───────────────────────────┤
+│ State Variable   │ Mutating Function │ Type of Mutation           │
+├──────────────────┼───────────────────┼───────────────────────────┤
+│ userBalance[u]   │ deposit()         │ increment (+= amount)      │
+│ userBalance[u]   │ withdraw()        │ decrement (-= amount)      │
+│ userBalance[u]   │ transfer()        │ decrement sender, inc recv │
+│ userBalance[u]   │ _burn()           │ decrement (-= amount)      │
+│ userBalance[u]   │ liquidate()       │ decrement (-= seized)      │
+│ checkpoint[u]    │ deposit()         │ full reset                 │
+│ checkpoint[u]    │ withdraw()        │ full reset                 │
+│ checkpoint[u]    │ transfer()        │ ??? — CHECK THIS           │
+│ checkpoint[u]    │ _burn()           │ ??? — CHECK THIS           │
+│ checkpoint[u]    │ liquidate()       │ ??? — CHECK THIS           │
+└──────────────────┴───────────────────┴───────────────────────────┘
+```
+
+The `???` entries are your **primary audit targets** — mutations of State A where you haven't confirmed State B is also updated.
+
+---
+
+### Phase 3: Cross-Check — The Core Audit
+
+For EVERY (operation, state variable) pair from Phase 2:
+
+> "This operation modifies State A.
+>  Does it ALSO update every coupled state that depends on A?"
+
+Check specifically:
+
+```
+□ Full removal (A → 0): Is every coupled state reset/cleared?
+□ Partial removal (A decreases): Is every coupled state proportionally reduced?
+□ Increase (A grows): Is every coupled state proportionally increased?
+□ Transfer (A moves between entities): Is coupled state moved too?
+□ Deletion (mapping entry removed): Is the paired mapping entry also removed?
+□ Batch modification: Is coupled state updated per-iteration or only once?
+```
+
+**If ANY path updates A without updating its coupled state → FINDING.**
+
+For each potential finding, trace the FULL code path:
+1. Read the function that modifies State A
+2. Search for any write to State B within the same function
+3. Search for any internal call that writes to State B
+4. Search for any modifier/hook that writes to State B
+5. If none found → confirmed finding
+
+---
+
+### Phase 4: Check Operation Ordering Within Functions
+
+Many functions perform multiple state changes sequentially. Trace the exact order:
+
+```
+function doSomething() {
+    step1: reads State A and State B → computes result
+    step2: modifies State B based on result
+    step3: modifies State A
+    // State B is now stale relative to new State A
+}
+```
+
+Ask at each step:
+- "After this step, are ALL coupled pairs still consistent?"
+- "Does step N use a value that step N-1 already invalidated?"
+- "If I read the coupled pair RIGHT HERE, would the invariant hold?"
+- "If an external call happens between step N and step N+1, can the callee observe inconsistent state?"
+
+**Common ordering bugs:**
+- Claim rewards BEFORE reducing stake → rewards computed on old (higher) stake
+- Update index AFTER modifying supply → index uses stale supply
+- Read cached price AFTER changing position → health check uses wrong price
+- Emit event with old values AFTER state change → off-chain systems desync
+
+---
+
+### Phase 5: Compare Parallel Code Paths
+
+Find operations that achieve similar outcomes through different paths:
+
+- `transfer()` vs `burn()` — both reduce sender balance
+- `withdraw()` vs `liquidate()` — both reduce position
+- `partial` vs `full` removal — both decrease, different amounts
+- Direct call vs routed-through-wrapper call
+- Normal path vs emergency/admin path
+- Single operation vs batch operation
+- User-initiated vs keeper/bot-initiated
+
+For each group, compare: **do ALL paths update the same coupled state?**
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ PARALLEL PATH COMPARISON                                    │
+├─────────────────┬──────────────┬──────────────┬────────────┤
+│ Coupled State   │ withdraw()   │ liquidate()  │ emergencyW │
+├─────────────────┼──────────────┼──────────────┼────────────┤
+│ balance         │ ✓ updated    │ ✓ updated    │ ✓ updated  │
+│ checkpoint      │ ✓ updated    │ ✗ MISSING    │ ✗ MISSING  │
+│ totalSupply     │ ✓ updated    │ ✓ updated    │ ✗ MISSING  │
+│ rewardDebt      │ ✓ updated    │ ✗ MISSING    │ ✗ MISSING  │
+└─────────────────┴──────────────┴──────────────┴────────────┘
+
+FINDINGS: liquidate() and emergencyWithdraw() don't update checkpoint
+          or rewardDebt when reducing balance.
+```
+
+If Path A adjusts the coupled state but Path B doesn't → **FINDING**.
+
+---
+
+### Phase 6: Trace Multi-Step User Journeys
+
+Simulate sequences where a user interacts multiple times:
+
+```
+1. User enters a position (state initialized)
+2. Time passes / external state evolves (index grows, prices change)
+3. User does PARTIAL modification (coupled state may break here)
+4. More time passes / external state evolves
+5. User does another operation reading the coupled state
+```
+
+At step 5, ask:
+- "Is the coupled state still valid given the partial change at step 3?"
+- "Does the computation use stale State B with current State A?"
+- "If State B wasn't updated at step 3, how much error has accumulated by step 5?"
+
+**Key sequences to test:**
+- Deposit → partial withdraw → claim rewards (rewards on correct amount?)
+- Stake → unstake half → restake → unstake all (reward debt correct?)
+- Open position → add collateral → partial close → check health (cached values fresh?)
+- Delegate votes → transfer tokens → vote (voting power reflects current balance?)
+- Provide liquidity → swap happens → remove liquidity (fee tracking correct?)
+
+---
+
+### Phase 7: Check What Masks the Bug
+
+Look for defensive code that HIDES broken invariants:
+
+```
+MASKING PATTERN 1: Ternary clamp
+  x > y ? x - y : 0
+  → WHY would x ever be less than y? If the invariant held, it wouldn't.
+    This silently returns 0 instead of reverting on the broken state.
+
+MASKING PATTERN 2: Try/catch swallowing
+  try target.call() {} catch {}
+  → The revert from broken state is caught and ignored.
+
+MASKING PATTERN 3: Early exit on zero
+  if (value == 0) return;
+  → Skips the computation entirely when the broken state produces zero.
+
+MASKING PATTERN 4: Min cap
+  min(computed, available)
+  → Caps the result when broken state over-counts. The over-counting
+    is the bug; the min() just prevents the revert.
+
+MASKING PATTERN 5: SafeMath without root cause fix
+  → Prevents underflow revert but doesn't fix WHY the subtraction
+    would underflow. The state is still inconsistent.
+
+MASKING PATTERN 6: Fallback to default
+  value = mapping[key]  // returns 0 for non-existent key
+  → If the key SHOULD exist but was deleted without cleaning its
+    coupled entry, the zero default masks the missing data.
+```
+
+**These patterns convert what SHOULD be a loud failure into a silent one.** The invariant is still broken — the symptom is just suppressed. Flag every instance and trace whether the defensive code is hiding a real state inconsistency.
+
+---
+
+## Red Flags Checklist
+
+```
+- [ ] A function modifies a base value but has no writes to its coupled state
+- [ ] Two similar operations (e.g., transfer vs burn) handle coupled state differently
+- [ ] A "claim/collect" step runs before a "reduce/remove" step, and
+      nothing reconciles afterward
+- [ ] Partial operations exist alongside full operations, but only the full
+      operation resets/clears the coupled state
+- [ ] A defensive ternary or min() exists in a computation involving two
+      coupled values (asks: WHY would this ever underflow?)
+- [ ] delete or reset of one mapping but not its paired mapping
+- [ ] A loop processes multiple sub-positions but accumulates into a
+      shared coupled value without per-iteration adjustment
+- [ ] An emergency/admin function bypasses the normal state update path
+- [ ] A migration or upgrade function copies State A but not State B
+- [ ] A callback or hook modifies State A but the caller doesn't know
+      to update State B afterward
+```
+
+---
+
+## Phase 8: Verification Gate (MANDATORY)
+
+**Every CRITICAL, HIGH, and MEDIUM finding MUST be verified before final report.**
+
+### Verification Methods:
+
+**Method A: Code Trace Verification**
+1. Read the exact function that breaks the invariant
+2. Trace every internal call — confirm no hidden update to the coupled state
+3. Check modifiers, hooks, and base class overrides
+4. Confirm no event-driven or callback-based reconciliation exists
+5. Verdict: TRUE POSITIVE / FALSE POSITIVE
+
+**Method B: PoC Test Verification**
+1. Write a test using the project's native framework
+2. Execute the trigger sequence from the finding
+3. Assert that the coupled state is inconsistent after the operation
+4. Assert that a subsequent operation produces incorrect results
+5. If test passes: TRUE POSITIVE. If test fails: FALSE POSITIVE
+
+**Method C: Hybrid (trace + PoC)**
+For complex multi-contract findings spanning multiple modules.
+
+### Common False Positive Patterns:
+
+1. **Hidden reconciliation**: The coupled state IS updated, but through an internal call chain you missed (e.g., `_beforeTokenTransfer` hook).
+2. **Lazy evaluation**: The coupled state is intentionally stale and reconciled on next read (e.g., `_updateReward()` modifier runs before every function).
+3. **Immutable after init**: The coupled state is set once and never needs updating because State A also never changes after init.
+4. **Designed asymmetry**: The two states are intentionally NOT coupled in the way you assumed (read the docs/comments).
+
+---
+
+## Severity Classification
+
+| Severity | Criteria |
+|----------|----------|
+| **CRITICAL** | Coupled state desync causes direct value loss (wrong payouts, stolen funds, permanent lock) |
+| **HIGH** | Coupled state desync causes conditional value loss or broken core functionality |
+| **MEDIUM** | Coupled state desync causes incorrect accounting, griefing, or degraded functionality |
+| **LOW** | Coupled state desync causes cosmetic issues, event inaccuracy, or edge-case-only errors |
+
+---
+
+## Output Format
+
+Save raw findings to: `.audit/findings/state-inconsistency-raw.md`
+Save verified findings to: `.audit/findings/state-inconsistency-verified.md`
+
+```markdown
+# State Inconsistency Audit — Verified Findings
+
+## Coupled State Dependency Map
+[The map from Phase 1]
+
+## Mutation Matrix
+[The matrix from Phase 2]
+
+## Parallel Path Comparison
+[The comparison table from Phase 5]
+
+## Verification Summary
+| ID | Coupled Pair | Breaking Op | Original Severity | Verdict | Final Severity |
+|----|-------------|-------------|-------------------|---------|----------------|
+
+## Verified Findings
+
+### Finding SI-001: [Title]
+**Severity:** CRITICAL | HIGH | MEDIUM | LOW
+**Verification:** [Code trace / PoC / Hybrid]
+
+**Coupled Pair:** State A ↔ State B
+**Invariant:** [What relationship must hold between them]
+
+**Breaking Operation:** `functionName()` in `Contract.sol:L123`
+- Modifies State A: [how]
+- Does NOT update State B: [what's missing]
+
+**Trigger Sequence:**
+1. [Step-by-step minimal sequence to break the invariant]
+
+**Consequence:**
+- [What goes wrong when a later operation reads both A and B]
+- [Concrete impact: wrong payout amount, locked funds, etc.]
+
+**Masking Code** (if present):
+```[language]
+// This defensive code hides the broken invariant:
+[the masking pattern]
+```
+
+**Fix:**
+```[language]
+// Add the missing state synchronization:
+[minimal fix]
+```
+
+---
+
+## False Positives Eliminated
+[Findings that failed verification, with explanation]
+
+## Summary
+- Coupled state pairs mapped: [N]
+- Mutation paths analyzed: [N]
+- Raw findings (pre-verification): [N]
+- After verification: [N] TRUE POSITIVE | [N] FALSE POSITIVE
+- Final: [N] CRITICAL | [N] HIGH | [N] MEDIUM | [N] LOW
+```
+
+---
+
+## Post-Audit Actions
+
+| Scenario | Action |
+|----------|--------|
+| Need deeper context on a function | Re-read the function and its callers line-by-line |
+| Finding confirmed as true positive | Write up with severity, trigger sequence, PoC, and fix |
+| Need first-principles reasoning on a pair | Run `/feynman` on the specific functions involved |
+| Need exploit validation | Write a Foundry/Hardhat PoC test to confirm |
+| Uncertain about design intent | Check NatSpec, comments, and project documentation |
+
+---
+
+## Anti-Hallucination Protocol
+
+```
+NEVER:
+- Assume two states are coupled without verifying they are read together
+- Claim a function is missing an update without reading its full call chain
+- Report a finding without showing the exact code that breaks the invariant
+- Ignore lazy-evaluation patterns (modifiers that reconcile on entry)
+- Assume a mapping deletion is a bug without checking if the paired mapping
+  is also deleted or intentionally kept
+
+ALWAYS:
+- Read the actual storage declarations to understand types and relationships
+- Trace internal calls to check for hidden updates
+- Check _before/_after hooks and modifiers for reconciliation logic
+- Verify the coupled relationship by finding code that reads BOTH values together
+- Show exact file paths and line numbers for all references
+```
+
+---
+
+## Quick-Start Checklist
+
+- [ ] **Phase 1:** Map all storage variables and their coupled dependencies
+- [ ] **Phase 1:** Build the Coupled State Dependency Map
+- [ ] **Phase 2:** For each state variable, list every mutating function
+- [ ] **Phase 2:** Build the Mutation Matrix (mark `???` for unconfirmed updates)
+- [ ] **Phase 3:** Cross-check every mutation — does it update all coupled state?
+- [ ] **Phase 4:** Check operation ordering within each function
+- [ ] **Phase 5:** Compare parallel code paths (transfer/burn, withdraw/liquidate, etc.)
+- [ ] **Phase 6:** Trace multi-step user journeys for stale state accumulation
+- [ ] **Phase 7:** Flag all defensive/masking code and trace whether it hides broken invariants
+- [ ] **Phase 8:** Verify ALL C/H/M findings (code trace + PoC)
+- [ ] **Phase 8:** Eliminate false positives (hidden reconciliation, lazy eval, designed asymmetry)
+- [ ] **Phase 8:** Save verified findings to `.audit/findings/state-inconsistency-verified.md`
+- [ ] **Phase 8:** Present ONLY verified report to the user
 
 

@@ -80,7 +80,7 @@ if [ -d "SolidityEVM/pashov-skills" ]; then
 fi
 
 # Other ecosystem frameworks
-for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal; do
+for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal Nemesis; do
     if [ -d "$ecosystem" ]; then
         echo "" >> "$LLMS_TXT"
         echo "## $ecosystem" >> "$LLMS_TXT"
@@ -145,7 +145,7 @@ if [ -d "SolidityEVM/pashov-skills" ]; then
 fi
 
 # Add other ecosystems
-for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal; do
+for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal Nemesis; do
     if [ -d "$ecosystem" ]; then
         while IFS= read -r f; do
             file_list+=("$f")
