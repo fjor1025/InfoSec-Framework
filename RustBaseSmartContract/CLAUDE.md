@@ -1,10 +1,10 @@
 <!-- Managed by docs-for-humans-and-ai skill -->
 <!-- Ecosystem: Rust (CosmWasm / Solana / Substrate) -->
-<!-- Version: 3.2 -->
+<!-- Version: 3.3 -->
 
 # Rust Smart Contract Audit Framework
 
-Covers **CosmWasm**, **Solana/Anchor**, **Substrate**, and general Rust smart contracts. Version 3.2 includes Safe Solana Builder (Frank Castle) patterns and Awesome-Rust-Checker integration.
+Covers **CosmWasm**, **Solana/Anchor**, **Substrate**, and general Rust smart contracts. Version 3.3 includes Safe Solana Builder (Frank Castle) patterns, Awesome-Rust-Checker integration, FINDING-FORMAT, MULTI-EXPERT cross-validation, TRIAGER, and full reference/ vulnerability library.
 
 **Before making changes**, read this file fully. For repo-wide conventions, see [../CLAUDE.md](../CLAUDE.md).
 
@@ -16,8 +16,28 @@ RustBaseSmartContract/
 ├── README.md                          ← Human-facing overview + quick start
 ├── CommandInstruction-Rust.md         ← System prompt (binding rules, Rust-specific lenses)
 ├── Rust-Smartcontract-workflow.md     ← Methodology + ClaudeSkills patterns + SSB
-└── Audit_Assistant_Playbook_Rust.md   ← Conversation structure (Sections 1–10)
+├── Audit_Assistant_Playbook_Rust.md   ← Conversation structure (Sections 1–10)
+└── solana-auditor-skills/             ← Parallelized audit orchestrator (105 attack vectors)
+    ├── SKILL.md                       ← Orchestrator instructions
+    ├── references/
+    │   ├── attack-vectors/            ← 105 documented patterns (V1-V105)
+    │   ├── agents/                    ← vector-scan, protocol, adversarial agents
+    │   ├── judging.md                 ← FP filtering criteria
+    │   └── report-formatting.md       ← Output format
+    └── assets/
 ```
+
+## Parallelized Scanning (Solana-Specific)
+
+For Solana/Anchor programs, invoke the parallelized audit orchestrator:
+
+```
+[AUDIT AGENT: Solana Parallelized Scan]
+```
+
+- **Default mode**: Spawns 4 vector scanning agents against 105 attack vectors
+- **DEEP mode**: Adds Solana Protocol Agent + Adversarial Reasoning Agent
+- Merges and deduplicates findings with confidence scoring
 
 ## 3-File Architecture
 

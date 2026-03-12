@@ -7,6 +7,39 @@ You MUST treat the following files as the definitive source of audit methodology
 - **pashov-skills/SKILL.md** — Pashov Audit Group orchestrator: spawns 4–5 parallel agents against 170 atomic attack vectors with FP gates, confidence scoring, and merged deduplication; see `pashov-skills/` directory for agent instructions and vector files
 - **Nemesis/skills/** — NEMESIS iterative deep-reasoning audit (Feynman Auditor + State Inconsistency Auditor in alternating loop); see [Nemesis/NEMESIS_INTEGRATION.md](../Nemesis/NEMESIS_INTEGRATION.md) for integration rules
 
+### v4.0 GOD MODE METHODOLOGY (NEW)
+Multi-auditor cross-validation achieving ~8% FP rate vs ~60% baseline:
+- **MAJEUR-METHODOLOGY.md** — Multi-auditor cross-validation architecture, Known Findings (KF#) template, Review annotation format
+- **FALSE-POSITIVE-CRITERIA.md** — Documented FP criteria per fv-sol category; check BEFORE reporting ANY finding
+- **SHARP-EDGES.md** — Design footgun detection + code maturity scoring (not vulnerabilities, LOW/INFO severity)
+- **CERTORA-INTEGRATION.md** — Formal verification property patterns for mathematical invariant proofs
+
+**Review Annotation Format (MANDATORY for all findings):**
+```markdown
+> **Review: [VERDICT].** [REASONING]. [DUPLICATE REFS if applicable].
+```
+
+**Verdicts:** Not a bug | Valid observation | Design tradeoff | Configuration-dependent | Production blocker
+
+**Confidence Scoring [75-100]:**
+| Score | Meaning | Decision |
+|-------|---------|----------|
+| 95-100 | Mathematical certainty, PoC confirmed | Report as definitive |
+| 85-94 | High confidence, clear exploit path | Report with validation |
+| 75-84 | Moderate confidence, theoretical | Report as observation |
+| <75 | Low confidence, speculative | Exclude from final report |
+
+### ENHANCED KNOWLEDGE BASE (v3.3)
+Protocol-specific context and structured vulnerability patterns:
+- **reference/protocols/** — 21 protocol-type context files (dexes.md, lending.md, bridges.md, staking.md, etc.) mapping bug classes to preconditions, detection heuristics, historical exploits
+- **reference/fv-sol/** — 10 vulnerability pattern categories (fv-sol-1‥10): reentrancy, precision, arithmetic, access control, logic, unchecked returns, proxy, slippage, DoS, oracle
+- **solidity-checks.md** — Quick DeFi audit tricks with protocol lookup table (run `cat reference/protocols/<type>.md` after protocol detection)
+- **FINDING-FORMAT.md** — Standardized finding structure with mermaid diagrams, expert attribution, triager notes
+- **MULTI-EXPERT.md** — 3-round validation: Expert 1 (systematic), Expert 2 (economic/fresh perspective), Triager (budget defender)
+- **TRIAGER.md** — Customer Validation Expert methodology for finding challenge/validation
+- **SOLODIT-MCP.md** — Solodit database integration (20k+ real findings) for prior art validation and historical exploit research
+- **secure-development-patterns.md** — OpenZeppelin integration validation patterns for auditing OZ-based contracts
+
 ### CONVERSATION STRUCTURE (from Audit_Assistant_Playbook.md)
 When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 
@@ -49,6 +82,16 @@ When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 - "[x] #file:audit-workflow1.md has been fully read and internalized."
 - "[x] #file:audit-workflow2.md has been fully read and internalized."
 
+**MANDATORY PROTOCOL TYPE DETECTION (v3.3):**
+Detect protocol type then load context file:
+```
+1. Identify: DEX/AMM, Lending, Bridge, Staking, Governance, Vault, NFT, Derivatives...
+2. Load: reference/protocols/<detected_type>.md (e.g., reference/protocols/lending.md)
+3. Apply: Protocol-specific preconditions, detection heuristics, historical exploits
+4. Cross-ref: fv-sol-X entries for each bug class mentioned in protocol file
+```
+Protocol context files provide 10,600+ real finding patterns organized by DeFi category.
+
 **For EVERY target contract, you MUST also complete:**
 - "[ ] Inheritance tree traced" [audit-workflow2.md, Step 2.1b]
 - "[ ] Modifier execution order mapped" [audit-workflow2.md, Step 2.1b]
@@ -64,6 +107,8 @@ When the user invokes a specific **AUDIT AGENT** role, switch to that mode:
 - "[ ] Developer assumption inventory completed" [audit-workflow2.md, Step 7.5]
 - "[ ] Pashov 170-vector triage completed (Skip/Borderline/Survive)" [audit-workflow1.md, Step 5.2b]
 - "[ ] NEMESIS iterative audit completed (optional, for complex state/logic)" [Nemesis/NEMESIS_INTEGRATION.md]
+- "[ ] Protocol context loaded (reference/protocols/<type>.md)" [NEW v3.3]
+- "[ ] OpenZeppelin patterns validated (if applicable)" [secure-development-patterns.md]
 
 ### ALIGNMENT GATE — STOP BEFORE EXECUTING
 
@@ -103,8 +148,24 @@ For any potential issue identified, you **MUST** formally validate it by answeri
 2.  **State Freshness:** Does the attack account for current, on-chain state? It must not depend on stale storage, cached values, or invalid historical baselines.
 3.  **Execution Closure:** Are all external calls, `delegatecall`s, upgrades, and callbacks correctly modeled and within the attacker's control?
 4.  **Economic Realism:** Are the attacker's costs, timing (e.g., block numbers, deadlines), and constraints (e.g., privilege requirements) feasible?
+5.  **Prior Art Validation (v3.3):** Search Solodit for similar findings. If known FP pattern exists, document why this case differs. If valid prior art exists, cite it in references.
 
 **If ANY check fails, DO NOT report the finding.** Return to analysis.
+
+**v4.0 FALSE POSITIVE CHECK (MANDATORY):**
+Before reporting ANY finding, check FALSE-POSITIVE-CRITERIA.md:
+1. Identify the vulnerability category (fv-sol-1 through fv-sol-10)
+2. Check each FP criterion for that category
+3. If ANY criterion matches → Mark as False Positive with annotation:
+   `> **Review: False positive.** Per [criterion-id]: "[criterion text]"`
+4. Only if NO criteria match → Proceed with severity assessment
+
+**MULTI-EXPERT VALIDATION (v3.3):**
+For High/Critical findings, apply MULTI-EXPERT.md methodology:
+1. Expert 1: Systematic code review perspective
+2. Expert 2: Independent fresh analysis with economic focus
+3. Triager: Budget-protection challenge (attempt to disprove)
+Only finalize findings that survive all three expert passes.
 
 ### AUDIT WORKFLOW INTEGRATION
 Use this sequence for a complete audit:

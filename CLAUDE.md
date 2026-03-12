@@ -19,7 +19,7 @@ InfoSec-Framework/
 ├── llms.txt                               ← AI index (page list with descriptions)
 ├── llms-full.txt                          ← AI ingest (full concatenated content)
 │
-├── SolidityEVM/                           ← Benchmark framework (v3.2)
+├── SolidityEVM/                           ← Benchmark framework (v4.0 God Mode)
 │   ├── CommandInstruction.md              ← System prompt (binding rules)
 │   ├── audit-workflow1.md                 ← Manual methodology + 170-vector Pashov
 │   ├── audit-workflow2.md                 ← Semantic phase analysis (SNAPSHOT→COMMIT)
@@ -33,11 +33,16 @@ InfoSec-Framework/
 │       ├── agents/                        ← Vector-scan + adversarial agent instructions
 │       └── attack-vectors/                ← 170 atomic attack vectors (4 files)
 │
-├── RustBaseSmartContract/                 ← CosmWasm / Solana / Substrate (v3.2)
+├── RustBaseSmartContract/                 ← CosmWasm / Solana / Substrate (v3.3)
+│   └── solana-auditor-skills/             ← Parallelized Solana audit (105 vectors)
 ├── Go-SmartContract/                      ← Cosmos SDK / IBC / CometBFT
 ├── Cosmos-SDK/                            ← Chain-level governance / consensus
 ├── Cairo-StarkNet/                        ← StarkNet L2
 ├── Algorand-PyTeal/                       ← PyTeal / TEAL
+├── TON-FunC/                              ← TON / FunC / Tact (v3.3) [NEW]
+│   └── ton-auditor-skills/                ← Parallelized TON audit (87 vectors)
+├── Move/                                  ← Sui Move (v3.3) [NEW]
+│   └── move-auditor-skills/               ← Parallelized Move audit (143 vectors)
 │   (each contains CLAUDE.md + README.md + CommandInstruction + Methodology + Playbook)
 │
 ├── Nemesis/                               ← NEMESIS iterative reasoning auditor (language-agnostic)

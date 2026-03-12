@@ -1,6 +1,6 @@
 <!-- Managed by docs-for-humans-and-ai skill -->
 <!-- Ecosystem: Cairo / StarkNet -->
-<!-- Version: 2.0 -->
+<!-- Version: 3.3 -->
 
 # Cairo/StarkNet Smart Contract Audit Framework
 
@@ -16,7 +16,11 @@ Cairo-StarkNet/
 ├── README.md                          ← Human-facing overview + quick start
 ├── CommandInstruction-Cairo.md        ← System prompt (binding rules, 6 Cairo lenses)
 ├── Cairo-Audit-Methodology.md         ← Full audit methodology + ClaudeSkills patterns
-└── Audit_Assistant_Playbook_Cairo.md  ← Conversation structure (Sections 1–10)
+├── Audit_Assistant_Playbook_Cairo.md  ← Conversation structure (Sections 1–10)
+├── FINDING-FORMAT.md                  ← Standardized finding output template
+├── MULTI-EXPERT.md                    ← Multi-expert cross-validation protocol
+├── TRIAGER.md                         ← Triage + prioritization workflow
+└── secure-development-patterns-cairo.md ← Secure coding patterns for Cairo
 ```
 
 ## 3-File Architecture

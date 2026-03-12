@@ -21,6 +21,21 @@ The following documents form the **binding methodology** for this audit:
 
 **Precedence rule:** If any advice conflicts, the higher-priority document wins.
 
+### ENHANCED KNOWLEDGE BASE (v3.3)
+Protocol-specific context and OpenZeppelin for Cairo patterns:
+- **secure-development-patterns-cairo.md** — OpenZeppelin Contracts for Cairo validation: component patterns, OwnableComponent, AccessControl, ERC20/721/1155, UpgradeableComponent, storage compatibility
+- **FINDING-FORMAT.md** — Standardized finding structure with expert attribution, triager notes
+- **MULTI-EXPERT.md** — 3-round validation: Expert 1 (systematic), Expert 2 (economic/fresh), Triager (budget defender)
+- **TRIAGER.md** — Customer Validation Expert methodology for finding challenge/validation
+
+### OPENZEPPELIN FOR CAIRO INTEGRATION CHECKS
+When auditing Cairo contracts using OpenZeppelin:
+- **Verify component! macro usage** — not manual reimplementation
+- **Check #[substorage(v0)]** — prevents storage collision
+- **Validate upgrade access control** — UpgradeableComponent MUST have guard
+- **Confirm storage compatibility** — no renamed/removed/type-changed variables
+- **Reference**: `secure-development-patterns-cairo.md` for full validation checklist
+
 ---
 
 ## CORE RULES OF ENGAGEMENT
