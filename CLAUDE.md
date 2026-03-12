@@ -4,7 +4,7 @@
 
 # InfoSec-Framework
 
-A structured audit framework for smart contract security across 6 blockchain ecosystems. Pure Markdown knowledge graph — no build step, no web framework.
+A structured audit framework for smart contract security across 8 blockchain ecosystems. Pure Markdown knowledge graph — no build step, no web framework.
 
 **Before making any changes**, read this file fully to understand the repo structure, conventions, and contribution rules.
 

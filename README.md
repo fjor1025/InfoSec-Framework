@@ -80,6 +80,20 @@ audit-assistant-playbook/
 │   ├── CommandInstruction-Algorand.md     <- Binding architecture + 6 Algorand lenses
 │   └── Algorand-Audit-Methodology.md      <- Methodology + ClaudeSkills A1–A9 patterns
 │
+├── TON-FunC/                              <- TON / FunC / Tact Framework (v3.3)
+│   ├── CLAUDE.md
+│   ├── README.md
+│   ├── Audit_Assistant_Playbook_TON.md    <- Sections 1–10
+│   ├── CommandInstruction-TON.md          <- Binding architecture + 6 TON lenses
+│   └── ton-auditor-skills/                <- 87-vector parallelized scan orchestrator
+│
+├── Move/                                  <- Sui Move Framework (v3.3)
+│   ├── CLAUDE.md
+│   ├── README.md
+│   ├── Audit_Assistant_Playbook_Move.md   <- Sections 1–10
+│   ├── CommandInstruction-Move.md         <- Binding architecture + 6 Move lenses
+│   └── move-auditor-skills/               <- 143-vector parallelized scan orchestrator
+│
 ├── Nemesis/                               <- NEMESIS iterative reasoning auditor (language-agnostic)
 │   ├── CLAUDE.md                          <- AI agent context
 │   ├── README.md                          <- Architecture, benchmark, usage
@@ -91,12 +105,12 @@ audit-assistant-playbook/
 │
 └── ClaudeSkills/                          <- Trail of Bits vulnerability patterns (submodule)
     └── plugins/building-secure-contracts/skills/
-    │   ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
-    │   ├── cosmos-vulnerability-scanner/   <- Integrated → Go Framework
-    │   ├── substrate-vulnerability-scanner/<- Integrated → Rust Framework
-    │   ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
-    │   ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
-    │   └── ton-vulnerability-scanner/      <- Available (no framework yet)
+│   ├── solana-vulnerability-scanner/   <- Integrated → Rust Framework
+│   ├── cosmos-vulnerability-scanner/   <- Integrated → Go Framework
+│   ├── substrate-vulnerability-scanner/<- Integrated → Rust Framework
+│   ├── cairo-vulnerability-scanner/    <- Integrated → Cairo Framework
+│   ├── algorand-vulnerability-scanner/ <- Integrated → Algorand Framework
+│   └── ton-vulnerability-scanner/      <- Integrated → TON-FunC Framework
     ├── plugins/solidity-auditor/          <- /solidity-auditor slash command (Pashov)
     │   └── skills/solidity-auditor/
     │       └── SKILL.md                   <- Orchestrator: 4 vector-scan + 1 adversarial agent
@@ -126,6 +140,8 @@ Each framework follows the same 3-file architecture, adapted for its ecosystem:
 | **Cosmos-SDK** | ~2,300+ | 1–10 | Cosmos chain-level | Governance attacks, consensus safety, module integration, IBC security, validator economics, upgrade safety |
 | **Cairo/StarkNet** | ~2,703 | 1–10 | Cairo C1–C6 | felt252 thinking, storage hunting, L1↔L2 surface, reentrancy, serialization, access control |
 | **Algorand/PyTeal** | ~2,456 | 1–10 | Algorand A1–A9 | Transaction field hunting, group thinking, inner tx fee, clear state paranoia, smart sig, asset opt-in |
+| **TON/FunC** | ~4,300+ | 1–10 | ton-auditor-skills (87 attack vectors) | Message sender hunting, bounce chain integrity, external message safety, gas/reserve economics, FunC footguns, async state coherence |
+| **Sui Move** | ~3,500+ | 1–10 | move-auditor-skills (143 attack vectors) | Object abilities hunting, capability verification, object relationship validation, shared object/PTB safety, package upgrade safety, arithmetic & type safety |
 | **NEMESIS** | Cross-ecosystem | N/A | Feynman (7 categories) + State Inconsistency (8 phases) | First-principles reasoning, coupled state mapping, iterative cross-feed loop, multi-tx journey tracing |
 
 ### ClaudeSkills Integration
@@ -203,6 +219,16 @@ Every function in every ecosystem is classified by what it does:
 2. Use [CommandInstruction-Algorand.md](./Algorand-PyTeal/CommandInstruction-Algorand.md) as system prompt
 3. Follow [Algorand-Audit-Methodology.md](./Algorand-PyTeal/Algorand-Audit-Methodology.md)
 
+### For TON/FunC/Tact Audits
+1. Read [Audit_Assistant_Playbook_TON.md](./TON-FunC/Audit_Assistant_Playbook_TON.md)
+2. Use [CommandInstruction-TON.md](./TON-FunC/CommandInstruction-TON.md) as system prompt
+3. Follow [TON-FunC-Audit-Methodology.md](./TON-FunC/TON-FunC-Audit-Methodology.md)
+
+### For Sui Move Audits
+1. Read [Audit_Assistant_Playbook_Move.md](./Move/Audit_Assistant_Playbook_Move.md)
+2. Use [CommandInstruction-Move.md](./Move/CommandInstruction-Move.md) as system prompt
+3. Follow [Move-Audit-Methodology.md](./Move/Move-Audit-Methodology.md)
+
 ## AI Ingestibility
 
 This framework is designed for both human auditors and AI agents:
@@ -211,7 +237,7 @@ This framework is designed for both human auditors and AI agents:
 |----------|---------|----------------|
 | [CLAUDE.md](./CLAUDE.md) | AI agent project context | Maintained manually |
 | [llms.txt](./llms.txt) | Page index with descriptions | `./scripts/build-llms-txt.sh` |
-| [llms-full.txt](./llms-full.txt) | Full concatenated content (~24K lines) | `./scripts/build-llms-txt.sh` |
+| [llms-full.txt](./llms-full.txt) | Full concatenated content (~42K lines) | `./scripts/build-llms-txt.sh` |
 | CommandInstruction files | LLM system prompts (binding rules) | Used directly as system prompt |
 | `merged.txt` (per-audit) | Concatenated in-scope code | Playbook Section 1 Build Layer |
 
@@ -234,6 +260,6 @@ The guide teaches narrative-driven reporting that communicates with judges — n
 
 ---
 
-**Framework Version:** 3.2 (SolidityEVM — NEMESIS), 3.2 (Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK), 1.0 (NEMESIS)
+**Framework Version:** 3.3 (TON/FunC, Sui Move integrations), 3.2 (SolidityEVM — NEMESIS; Rust — Safe Solana Builder), 2.1 (Go), 2.0 (Cairo, Algorand), 1.0 (Cosmos-SDK, NEMESIS)
 **Last Updated:** March 2026
 **License:** MIT
