@@ -24,7 +24,7 @@ echo "Building llms.txt and llms-full.txt from $(pwd)..."
 cat > "$LLMS_TXT" << 'HEADER'
 # InfoSec-Framework — Audit Assistant Playbook
 
-> A structured audit framework for smart contract security across 6 blockchain ecosystems. Binding architecture that forces AI agents into structured audit behavior. ~15,000+ lines of methodology, attack vectors, and conversation prompts.
+> A structured audit framework for smart contract security across 8 blockchain ecosystems. Binding architecture that forces AI agents into structured audit behavior. ~42,000+ lines of methodology, attack vectors, and conversation prompts.
 
 ## Core
 
@@ -80,7 +80,7 @@ if [ -d "SolidityEVM/pashov-skills" ]; then
 fi
 
 # Other ecosystem frameworks
-for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal Nemesis; do
+for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal TON-FunC Move Nemesis; do
     if [ -d "$ecosystem" ]; then
         echo "" >> "$LLMS_TXT"
         echo "## $ecosystem" >> "$LLMS_TXT"
@@ -145,7 +145,7 @@ if [ -d "SolidityEVM/pashov-skills" ]; then
 fi
 
 # Add other ecosystems
-for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal Nemesis; do
+for ecosystem in RustBaseSmartContract Go-SmartContract Cosmos-SDK Cairo-StarkNet Algorand-PyTeal TON-FunC Move Nemesis; do
     if [ -d "$ecosystem" ]; then
         while IFS= read -r f; do
             file_list+=("$f")
