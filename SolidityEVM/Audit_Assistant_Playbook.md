@@ -36,6 +36,7 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 | `audit-workflow2.md` | Semantic phase analysis (SNAPSHOT→COMMIT) | When classifying functions, tracing mutations |
 | `CommandInstruction.md` | System prompt for audit sessions | At start of any audit chat |
 | `pashov-skills/` | 170-vector parallelized scan, confidence scoring, agent instructions | Fast pre-audit triage, automated scanning, CI integration |
+| `vault_audit_guide.md` | SafeCast vault exploit identification in 30 seconds (unsafe downcast → share price collapse) | Any vault / ERC-4626 / yield aggregator audit; use `SCAN SafeCast Vault Exploit` |
 
 **Key Methodology Concepts to Apply:**
 - **Semantic Phases**: SNAPSHOT → ACCOUNTING → VALIDATION → MUTATION → COMMIT
@@ -55,6 +56,7 @@ This playbook structures **conversations**. The actual audit **methodology** liv
 - **Verification Strategy**: FV vs fuzzing vs manual — 60% ceiling for automated tools
 - **Pashov 170-Vector Scan**: Parallelized agentic scan with FP gates, confidence scoring, and cross-chain/LayerZero coverage (18 vectors)
 - **Pashov Confidence Scoring**: Start at 100, deduct for privilege (-25), partial path (-20), self-contained impact (-15), threshold at 75
+- **SafeCast Vault Exploit**: Bare downcast in vault accounting (`uint128(totalAssets)`) → silent truncation → share price collapse → vault drain (V32+V70); 30-second grep methodology in `vault_audit_guide.md`
 
 ---
 
@@ -1676,6 +1678,67 @@ For each item:
 - The specific token behavior assumption
 - Which tokens would violate it
 - Affected protocol functions
+
+Language:
+Respond in Russian.
+
+```
+
+### SCAN SafeCast Vault Exploit
+```text
+Context:
+Perform a targeted 30-second scan for SafeCast vault exploit patterns —
+unsafe downcasts inside vault share/asset accounting that silently truncate
+totalAssets or totalSupply, collapsing or inflating share price.
+
+Goal:
+Identify every bare narrowing cast (uint128, uint96, uint64, uint32, uint16, uint8)
+that is not guarded by SafeCast or an explicit type(uintN).max bounds check AND
+that appears in or feeds into vault share accounting functions.
+
+Instructions:
+- Use the full code from merged.txt.
+- Reference vault_audit_guide.md for the five canonical exploit sites and PoC skeleton.
+- Cross-reference Pashov vectors V32 and V70 (pashov-skills/attack-vectors/attack-vectors-{1,2}.md).
+- Apply finding-validation.md FP gate before reporting.
+- Do NOT validate exploits or assign severity.
+
+30-Second Grep Sequence:
+Step 1 — Bare downcasts:
+  uint128(\|uint96(\|uint64(\|uint32(\|uint16(\|uint8(\|int128(\|int64(\|int32(
+  EXCLUDE: SafeCast | type(uint | type(int | // | * | ^\s*//
+
+Step 2 — Vault accounting functions:
+  totalAssets|totalSupply|convertToShares|convertToAssets
+  |previewDeposit|previewWithdraw|previewMint|previewRedeem
+  |storedAssets|storedShares|_assets\b|_shares\b
+  EXCLUDE: // | ^\s*//
+
+Step 3 — Cross-reference overlap:
+  Flag every location where a bare downcast result is written to a state variable
+  that is later read by convertToShares, convertToAssets, or share-price math.
+
+Five Canonical Exploit Sites (from vault_audit_guide.md):
+1. _update/_deposit hook — uint128(assets + earned) stored as totalAssets
+2. _withdraw/_redeem hook — uint128(totalSupply - burned) stored as totalShares
+3. Reward/interest accrual — uint128(accumulatedInterest) added to totalAssets
+4. Price oracle integration — uint128(latestAnswer) stored as asset price
+5. Cross-contract accounting — vault returns uint128 to strategy for further math
+
+False Positive Conditions:
+- SafeCast.toUintN(x) used at every narrowing cast site
+- require(x <= type(uintN).max) precedes cast
+- Storage type analysis proves value can never reach 2^N
+- Protocol hard-caps deposits below type(uint128).max via immutable maxDeposit
+
+Output:
+Bulleted list of findings.
+For each item:
+- Location (file:function:line)
+- The bare cast expression
+- Which vault accounting variable it feeds into
+- Whether it is inside an unchecked block (escalate severity if yes)
+- Pashov vector(s) triggered (V32 / V70)
 
 Language:
 Respond in Russian.

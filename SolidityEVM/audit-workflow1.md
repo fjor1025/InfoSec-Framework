@@ -456,6 +456,7 @@ For each function, ask: "Does this pattern resemble a known hack?"
 - [ ] Cover Protocol (2020): Infinite mint via shield mining
 - [ ] YAM Finance (2020): Rebase calculation error
 - [ ] Penpie (2024, $27M): Permissionless market added post-audit broke assumptions
+- [ ] SafeCast Vault Pattern: `uint128(totalAssets)` truncation → share price collapse → vault drain (V70) — see `vault_audit_guide.md`
 
 **Flash Loan Specific:**
 - [ ] bZx (2020): Oracle manipulation via Uniswap
@@ -545,10 +546,13 @@ Based on protocol type:
 - [ ] Finality assumption violations
 - [ ] Lock-and-mint concentrated target
 
-**Staking/Farming**:
+**Staking/Farming / ERC-4626 Vaults**:
 - [ ] Reward calculation errors
 - [ ] Early/late withdrawal penalties
 - [ ] Share price manipulation (ERC-4626 inflation)
+- [ ] Unsafe downcast in vault accounting — `uint128(totalAssets)` without SafeCast truncates silently, collapsing or inflating share price (V70). Run the 30-second grep sequence from `vault_audit_guide.md`.
+- [ ] Reward/interest accumulator overflow into packed storage field (V32 + V70 combined)
+- [ ] Cross-contract accounting: strategy receives `uint128` from vault, widens to `uint256` silently — wrong vault math downstream
 
 **Governance**:
 - [ ] Flash loan voting power acquisition (Beanstalk $182M)
