@@ -17,6 +17,7 @@
 - [SolidityEVM/audit-workflow1.md](SolidityEVM/audit-workflow1.md): **Version:** 3.1 — Enhanced with evmresearch.io knowledge graph (300+ notes), CPIMP, Account Abstraction, Transient Storage, L2 Security, 2024–2025 exploit database, and **Pashov Audit Group 170 A
 - [SolidityEVM/audit-workflow2.md](SolidityEVM/audit-workflow2.md): **Version:** 3.0 — Enhanced with Specification Completeness Analysis, Compiler Verification, evmresearch.io knowledge graph integration
 - [SolidityEVM/Audit_Assistant_Playbook.md](SolidityEVM/Audit_Assistant_Playbook.md): **AI accelerates filtering and formalization.
+- [SolidityEVM/vault_audit_guide.md](SolidityEVM/vault_audit_guide.md): **Technique:** Identify unsafe-downcast vulnerabilities inside vault share/asset accounting in under 30 seconds, even in 50,000-line codebases.
 
 ### Pashov Audit Group Integration
 
@@ -341,4 +342,4 @@
 - [ClaudeSkills/plugins/variant-analysis/README.md](ClaudeSkills/plugins/variant-analysis/README.md): Find similar vulnerabilities and bugs across codebases using pattern-based analysis.
 
 ---
-Generated: 2026-03-12 23:41:05 UTC
+Generated: 2026-03-17 20:52:31 UTC

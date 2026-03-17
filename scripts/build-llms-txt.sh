@@ -61,7 +61,7 @@ done
 echo "" >> "$LLMS_TXT"
 echo "## SolidityEVM (Benchmark Framework)" >> "$LLMS_TXT"
 echo "" >> "$LLMS_TXT"
-for f in SolidityEVM/CLAUDE.md SolidityEVM/README.md SolidityEVM/CommandInstruction.md SolidityEVM/audit-workflow1.md SolidityEVM/audit-workflow2.md SolidityEVM/Audit_Assistant_Playbook.md; do
+for f in SolidityEVM/CLAUDE.md SolidityEVM/README.md SolidityEVM/CommandInstruction.md SolidityEVM/audit-workflow1.md SolidityEVM/audit-workflow2.md SolidityEVM/Audit_Assistant_Playbook.md SolidityEVM/vault_audit_guide.md; do
     if [ -f "$f" ]; then
         desc=$(get_description "$f")
         echo "- [$f]($f): $desc" >> "$LLMS_TXT"
@@ -135,6 +135,7 @@ file_list=(
     SolidityEVM/audit-workflow1.md
     SolidityEVM/audit-workflow2.md
     SolidityEVM/Audit_Assistant_Playbook.md
+    SolidityEVM/vault_audit_guide.md
 )
 
 # Add pashov-skills files
